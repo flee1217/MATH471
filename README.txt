@@ -1,4 +1,4 @@
-README file for CS 471, Fall 2018, Frederick Lee
+README file for CS 471, Fall 2018, Aaron Segura & Frederick Lee
 
 -Homework directory naming is as follows:
   -HW* (where * is the index of the homework assignment)
