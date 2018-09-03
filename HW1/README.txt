@@ -1,6 +1,6 @@
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-README file for Homework 1, Math 471, Fall 2018, Aaron Segura
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+README file for Homework 1, Math 471, Fall 2018, Aaron Segura, Fredrick Lee
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 - There is a homework report is in the directory.
 - There is no code for homework 1 so no hw1/code subdirectory was made
 - The purpose of this homework is to familarize the class with Git, working with a shell, and submitting their homework via git.
@@ -56,7 +56,7 @@ $ git diff
 Include this output in the report.pdf as well describing what this command is doing.
 
 9. Now add, commit and push the report PDF and report subdirectory to the repository.
-
+You are now finshed with homework 1 tasks.
 
 
 
