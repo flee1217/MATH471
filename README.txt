@@ -53,11 +53,9 @@ Include this output in the report.pdf and a description of what this command is 
 Modify test.txt by adding a line without commiting the new changes, and then type
 $ git diff
 
-Include this output in the report.pdf as well describing what this command is doing
+Include this output in the report.pdf as well describing what this command is doing.
 
-Try the following command and include the output in the report.pdf
-$ git status 
-
+9. Now add, commit and push the report PDF and report subdirectory to the repository.
 
 
 
