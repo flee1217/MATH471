@@ -1,6 +1,6 @@
 from scipy import *
 
-def newton(f, x0):
+def newton(f, x0, maxiter, tol):
     '''
     Newton's method of root finding
     
@@ -18,23 +18,45 @@ def newton(f, x0):
     data   : array of approximate roots
     '''
     
-
-    maxiter = 10        # delete this line after you add a maxiter parameter
-    data = zeros((maxiter,1))
+    # data is a table with maxiter rows and 4 columns
+    # column 1 will hold root guesses (data[0,0] is the initial
+    # root guess)
+    # column 2 will hold absolute error information
+    # column 3 will hold linear convergence factors
+    # column 4 will hold quadratic convergence factors
+    data = zeros((maxiter,4))
     x = x0
-    
+
     for i in range(maxiter):
         xold = x
         x = x - f(x, 0)/f(x, 1)
+
+        # do err calc here
         
-        s = "Iter  " + str(i) + "   Approx. root  " + str(x)
+        s = "Iter  " + str(i+1) + "   Approx. root  " + str(x)
         print(s)
     
         data[i,0] = x
+        
 
-        # Insert some logic for halting, if the tolerance is met
-        #if some_condition :
-        #   break
+        # delta is the absolute difference between the previous
+        # and current root guess.
+        
+        delta = abs(x - xold)
+        data[i,1] = delta
+
+        # we ignore calculating the convergence factors for the 1st
+        # iteration because the calculations are not well defined
+        # The convergence formulas on page 2 of the HW2 pdf do not
+        # allow calculating convergence factors after a single
+        # iteration using newton's method
+        if (i >= 1):
+            data[i,2] = data[i,1] / data[ i-1 , 1]
+            data[i,3] = data[i,1] / (data[ i-1 , 1] ** 2)
+
+        # if our guess difference is less than the defined tolerance
+        if (delta < tol):
+            break
     
     ##
     # end for-loop

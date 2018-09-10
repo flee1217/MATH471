@@ -26,9 +26,14 @@ def f3(x, d):
 
 fcn_list = [f1,f2,f3]
 
-x0 = -0.5
+# tunable parameters
+x0 = 1
+maxIterations = 10
+tolerance = 10 ** (-10)
+
 for fcn in fcn_list:
-    data = newton(fcn, x0)
+    data = newton(fcn, x0, maxIterations, tolerance )
+    print(data)
 
     # Here, you can post-process data, and test convergence rates 
 
