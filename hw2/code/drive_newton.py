@@ -10,12 +10,14 @@ def f1(x, d):
     elif d == 1:
         return 2*x
 
+# f(x) = x
 def f2(x, d):
     if d == 0:
         return x
     elif d == 1:
         return 1
 
+# f(x) = sin(x) + cos(x**2)
 def f3(x, d):
     if d == 0:
         return sin(x) + cos(x**2)
