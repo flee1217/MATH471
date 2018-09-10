@@ -15,7 +15,7 @@ README file for Homework 2, Math 471, Fall 2018, Aaron Segura, Fredrick Lee
 This can be done by the following command (for example):
 $ git clone https://lobogit.unm.edu/enjoi16/MATH471Segura.git
 
-2. Next create a file named test.txt inside the repository directory with a dummy line of text
+2. 
 
 3. Add, commit, and push this new text file with a commit message like "\My 1st commit of test.txt." to your repository with the following command:
 $ git add test.txt
