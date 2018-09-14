@@ -14,7 +14,7 @@ def newton(f, x0, maxiter, tol):
                   halting
     tol         : the minimum allowed absolute difference
                   between the two most recent root guesses
-                  
+                  before halting                  
     
     output
     ------
