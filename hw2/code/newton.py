@@ -10,8 +10,11 @@ def newton(f, x0, maxiter, tol):
                   Interface for f:  f(x, 0)  returns f(x)
                                     f(x, 1)  returns f'(x)
     x0          : initial guess
-    <maxiter>   :
-    <tol>       :
+    maxiter     : the max number of iterations allowed before
+                  halting
+    tol         : the minimum allowed absolute difference
+                  between the two most recent root guesses
+                  
     
     output
     ------
