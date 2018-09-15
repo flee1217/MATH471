@@ -75,11 +75,15 @@ for i in range(len(fcn_list)):
     y_min = min(ys)
     x_max = max(xs)
     x_min = min(xs)
-
+    
+    # differences between smallest and largest values in ys and xs
     y_d = y_max - y_min
     x_d = x_max - x_min
+    
+    # more book-keeping: max_diff holds the largest difference between x_d and y_d
     max_diff = max(y_d, x_d)
-
+    
+    # x_center and y_center are the linear midpoints between extremum values in x & y, respectively
     x_center = x_min + x_d/2
     y_center = y_min + y_d/2
 
