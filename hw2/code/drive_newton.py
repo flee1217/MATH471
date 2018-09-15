@@ -70,9 +70,10 @@ for i in range(len(fcn_list)):
     plt.show()
     # saving the compound plot
     f.savefig('newton_fig%d.png' %(i+1), dpi=None, format='png', bbox_inches='tight',pad_inches=0.1,)
+    '''
     # dumping root finding data into .tex file
     savetxt('newton_data%s.tex' %(i+1),data,fmt='%.5e',delimiter='  &  ',newline=' \\\\\n')
-    '''
+    
     
     # now, we plot the function on a linear x-y graph
     xs = data[:,0].tolist()
