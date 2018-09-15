@@ -52,8 +52,9 @@ for i in range(len(fcn_list)):
     plots[1].plot(range(len(data)),data[:,5])
     # showing the compound plot
     plt.show()
-    
+    # saving the compound plot
     f.savefig('newton_fig%d.png' %(i+1), dpi=None, format='png', bbox_inches='tight',pad_inches=0.1,)
+    # dumping root finding data into .tex file
     savetxt('newton_data%s.tex' %(i+1),data,fmt='%.5e',delimiter='  &  ',newline=' \\\\\n')
     # Here, you can post-process data, and test convergence rates 
 
