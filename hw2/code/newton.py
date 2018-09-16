@@ -75,5 +75,5 @@ def newton(f, x0, maxiter, tol):
 
     # the indices here constrain the size of the returned data set
     # because we preallocate maxiter rows but may not need all of them
-    return data[0:(i+1)]
+    return data[0:(n+1)]
 
