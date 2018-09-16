@@ -64,10 +64,13 @@ for i in range(len(fcn_list)):
     # increase
     plots[1].plot(range(len(data)),data[:,5])
 
+    plots[0].set_ylim(-0.2, 0.2)
+    plots[1].set_ylim(0,2.5)
+
     # formatting
-    plots[0].set_ylabel('$ f(x_n) $',fontsize=16)
-    plots[1].set_ylabel(r'$ \alpha $',fontsize=16)
-    plots[1].set_xlabel('$iteration$')
+    plots[0].set_ylabel('$f(x_n)$     ',fontsize=16,rotation=0,verticalalignment='center')
+    plots[1].set_ylabel(r'$\alpha $',fontsize=16,rotation=0,verticalalignment='center',rotation_mode='anchor')
+    plots[1].set_xlabel('$n$',fontsize=16)
     
     plt.xticks(np.arange(0,len(data),1))
 
@@ -120,8 +123,8 @@ for i in range(len(fcn_list)):
 
     gplot.axvline(linewidth = 1, color = 'k')
     gplot.axhline(linewidth = 1, color = 'k')    
-    gplot.set_xlabel('$x$')
-    gplot.set_ylabel('$f(x)$')
+    gplot.set_xlabel('$x$',fontsize=16)
+    gplot.set_ylabel('$f(x)$',fontsize=16,rotation=0,verticalalignment='center',rotation_mode='anchor')
     gplot.set_title('%s' %plot_titles[i])
     gplot.grid(True, linestyle='--')
     gplot.set_aspect(aspect='equal')
