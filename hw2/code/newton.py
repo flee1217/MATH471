@@ -65,7 +65,8 @@ def newton(f, x0, maxiter, tol):
         # the value for alpha cannot be calculated without
         # two previous iterations
         if (i >= 2):
-            data[i,5] = np.log(data[i,2])/np.log(data[i-1,2])
+            #data[i,5] = np.log(data[i,2])/np.log(data[i-1,2])
+            data[i,5] = np.log(1.0/data[i,2])/np.log(1.0/data[i-1,2])
 
         # if our guess difference is less than the defined tolerance
         if (delta < tol):
