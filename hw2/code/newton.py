@@ -36,43 +36,41 @@ def newton(f, x0, maxiter, tol):
     
     print("initial guess: %f" %x)
 
-    for i in range(maxiter):
+    for n in range(maxiter):
         xold = x
         x = x - f(x, 0)/f(x, 1)
 
         # do err calc here
         
-        s = "Iter  " + str(i+1) + "   Approx. root  " + str(x)
+        s = "Iter  " + str(n+1) + "   Approx. root  " + str(x)
         print(s)
     
-        data[i,0] = x
-        data[i,4] = f(x, 0)
+        data[n,0] = x
+        data[n,4] = f(x, 0)
         # delta is the absolute difference between the previous
         # and current root guess.
         delta = abs(x - xold)
-        data[i,1] = delta
+        data[n,1] = delta
         # we ignore calculating the convergence factors for the 1st
         # iteration because the calculations are not well defined
         # The convergence formulas on page 2 of the HW2 pdf do not
         # allow calculating convergence factors after a single
         # iteration using newton's method
-        if (i >= 1):
-            data[i,2] = data[i,1] / data[ i-1 , 1]
-            data[i,3] = data[i,1] / (data[ i-1 , 1] ** 2)
+        if (n >= 1):
+            data[n,2] = data[n,1] / data[ n-1 , 1]
+            data[n,3] = data[n,1] / (data[ n-1 , 1] ** 2)
         
         # here, we are calculating alpha, the approximate rate of
         # convergence at each iteration
         # the value for alpha cannot be calculated without
         # two previous iterations
-        if (i >= 2):
-            #data[i,5] = np.log(data[i,2])/np.log(data[i-1,2])
-            data[i,5] = np.log(1.0/data[i,2])/np.log(1.0/data[i-1,2])
+        if (n >= 2):
+            data[n,5] = np.log(1.0/data[n,2])/np.log(1.0/data[n-1,2])
 
         # if our guess difference is less than the defined tolerance
         if (delta < tol):
             break
     
-    ##
     # end for-loop
 
     # the indices here constrain the size of the returned data set
