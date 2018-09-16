@@ -123,7 +123,7 @@ for i in range(len(fcn_list)):
     gplot.set_aspect(aspect='equal')
 
     # plotting the x and f(x) iterates
-    gplot.plot(xs[:], ys[:], 'bo--', c='red')
+    gplot.plot(xs, ys, 'bo--', c='red')
     
     # these two functions create and place the labels for the initial and final root approximations
     gplot.annotate('$(x_0,f(x_0))$', xy=(xs[0],ys[0]),xytext=(init_root_label_x[i],init_root_label_y[i]),
