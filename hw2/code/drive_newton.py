@@ -59,10 +59,10 @@ for i in range(len(fcn_list)):
     # the first subplot graphs the function value
     # of the current root approximation as the root-finder
     # iterates
-    plots[0].plot(range(len(data)), data[:,4])
+    plots[0].plot(range(len(data)), data[:,5])
     # the second subplot graphs the alpha values as the iterations
     # increase
-    plots[1].plot(range(len(data)),data[:,5])
+    plots[1].plot(range(len(data)),data[:,6])
 
     plots[0].set_ylim(-0.2, 0.2)
     plots[1].set_ylim(0,2.5)
@@ -79,8 +79,11 @@ for i in range(len(fcn_list)):
     # saving the compound plot
     f.savefig('newton_fig%d.png' %(i+1), dpi=None, format='png', bbox_inches='tight',pad_inches=0.1,)
 
+    for x in range(len(data)):
+        data[x,0] = int(data[x,0])
     # dumping root finding data into .tex file
-    savetxt('newton_data%s.tex' %(i+1),data,fmt='%.5e',delimiter='  &  ',newline=' \\\\\n')
+    savetxt('newton_data%s.tex' %(i+1),data,fmt=['%d','%1.4e','%1.4e','%1.4e','%1.4e','%1.4e','%1.4e'],
+            delimiter='  &  ',newline=' \\\\\n')
     
     ############################################################################
     # now, we plot the function on a linear x-y graph
@@ -88,9 +91,9 @@ for i in range(len(fcn_list)):
 
     # data does not contain the initial root guess, so we insert both x0 and f(x0) at the
     # front of each root value and 
-    xs = data[:,0].tolist()
+    xs = data[:,1].tolist()
     xs.insert(0, x0s[i])
-    ys = data[:,4].tolist()
+    ys = data[:,5].tolist()
     ys.insert(0, fcn_list[i](x0s[i],0))
     
     # we would like to plot only parts of our function that are necessary

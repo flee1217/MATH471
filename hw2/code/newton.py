@@ -23,6 +23,7 @@ def newton(f, x0, maxiter, tol):
     '''
     
     # data is a table with maxiter rows and 4 columns
+    # column 0 will hold the current iterate index (for latex)
     # column 1 will hold root guesses (data[0,0] is the first
     # iterated root guess)
     # column 2 will hold absolute error information
@@ -31,7 +32,7 @@ def newton(f, x0, maxiter, tol):
     # column 5 will hold f evaluated at the i-th x iterate
     # column 6 will hold the approximate rate of convergence
     # of the sequence
-    data = zeros((maxiter,6))
+    data = zeros((maxiter,7))
     x = x0
     
     print("initial guess: %f" %x)
@@ -44,28 +45,29 @@ def newton(f, x0, maxiter, tol):
         
         s = "Iter  " + str(n+1) + "   Approx. root  " + str(x)
         print(s)
-    
-        data[n,0] = x
-        data[n,4] = f(x, 0)
+        
+        data[n,0] = n+1
+        data[n,1] = x
+        data[n,5] = f(x, 0)
         # delta is the absolute difference between the previous
         # and current root guess.
         delta = abs(x - xold)
-        data[n,1] = delta
+        data[n,2] = delta
         # we ignore calculating the convergence factors for the 1st
         # iteration because the calculations are not well defined
         # The convergence formulas on page 2 of the HW2 pdf do not
         # allow calculating convergence factors after a single
         # iteration using newton's method
         if (n >= 1):
-            data[n,2] = data[n,1] / data[ n-1 , 1]
-            data[n,3] = data[n,1] / (data[ n-1 , 1] ** 2)
+            data[n,3] = data[n,2] / data[ n-1 , 2]
+            data[n,4] = data[n,2] / (data[ n-1 , 2] ** 2)
         
         # here, we are calculating alpha, the approximate rate of
         # convergence at each iteration
         # the value for alpha cannot be calculated without
         # two previous iterations
         if (n >= 2):
-            data[n,5] = np.log(1.0/data[n,2])/np.log(1.0/data[n-1,2])
+            data[n,6] = np.log(1.0/data[n,3])/np.log(1.0/data[n-1,3])
 
         # if our guess difference is less than the defined tolerance
         if (delta < tol):
