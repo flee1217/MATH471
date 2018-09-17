@@ -8,7 +8,7 @@ README file for Homework 2, Math 471, Fall 2018, Aaron Segura, Fredrick Lee
 - i.e., approximate  solutions  to  the  equation f(x)  =  0.   
 - We  will  consider  three  different  functions:
     -f(x) = x
-    -f(x) =x^2
+    -f(x) = x^2
     -f(x) = sin(x) + cos(x)^2
 - We will use Newton’s method to find the roots.
 - This README file contains the instructions to reproduce these results 
