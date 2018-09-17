@@ -15,9 +15,10 @@ README file for Homework 2, Math 471, Fall 2018, Aaron Segura, Fredrick Lee
 
 - To reproduce the results in the report, do the following
 
-  1) Clone the repo on a local machine with python 3.7 and pdfTeX installed
+  1) Clone the repo on a local machine with python 3.7, scipy, & pdfTeX installed
     -python can be installed from: https://www.python.org/downloads/
     -pdfTeX can be installed from: https://www.tug.org/applications/pdftex/
+    -SciPy  can be installed from: https://scipy.org/scipylib/
 
   2) Enter the /code subdirectory of this repository folder
     - $ cd code
