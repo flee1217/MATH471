@@ -13,6 +13,14 @@ README file for Homework 2, Math 471, Fall 2018, Aaron Segura, Fredrick Lee
 - We will use Newton’s method to find the roots.
 - This README file contains the instructions to reproduce these results 
 
+**************************************************************************
+NOTE: All development of this project took place on the Mac computers
+      located in Dane Smith Hall room 144.
+     -We cannot guarantee that this software system works on any other
+      machine at this time.
+**************************************************************************
+
+
 - To reproduce the results in the report, do the following
 
   1) Clone the repo on a local machine with python 3.7, scipy, & pdfTeX installed
