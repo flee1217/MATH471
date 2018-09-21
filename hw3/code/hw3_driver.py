@@ -1,5 +1,5 @@
 from scipy import *
-from lglnodes import lglnodes
+# from lglnodes import lglnodes
 import numpy as np
 
 def int_trap(f, a, b, n):
