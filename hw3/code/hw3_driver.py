@@ -1,6 +1,7 @@
 from scipy import *
 # from lglnodes import lglnodes
 import numpy as np
+import matplotlib.pyplot as plt
 
 def int_trap(f, a, b, n):
     h = float(b - a) / n
@@ -26,6 +27,7 @@ def f1(k):
 k = np.pi * np.pi
 func = f1(k)
 tol = 10 ** (-10)
+'''
 for N in range(1,3000):
     I_n1 = int_trap(func, -1, 1, N+1)
     I_n = int_trap(func, -1, 1, N)
@@ -34,3 +36,32 @@ for N in range(1,3000):
     if (d <= tol):
         print(N)
         break
+'''
+
+# now we want to plot the error
+#
+# error here is defined as presented in the assignment specification
+# for problem 1
+# error_N+1 = | I_T_(N+1) - I_T_(N) |
+
+fcn_list = [f1(np.pi), f1(np.pi ** 2)]
+
+partition_limit = 1000
+
+errors = [np.zeros(partition_limit), np.zeros(partition_limit)]
+
+for i in range(len(fcn_list)):
+    for N in range(1,partition_limit):
+        a = int_trap(fcn_list[i], -1, 1, N+1)
+        b = int_trap(fcn_list[i], -1, 1, N)
+        errors[i][N-1] = abs(a - b)
+    
+    f, fplot = plt.subplots()
+    ns = range(1,partition_limit + 1)
+
+    fplot.loglog(ns, errors[i],
+                 ns, [1.0/n for n in ns],
+                 ns, [1.0/(n**2) for n in ns],
+                 ns, [1.0/(n**3) for n in ns],
+                 ns, [1.0/(n**4) for n in ns])
+    plt.show()
