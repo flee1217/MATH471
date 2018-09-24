@@ -27,10 +27,10 @@ k = np.pi * np.pi
 func = f1(k)
 tol = 10 ** (-10)
 for N in range(1,3000):
-    a = int_trap(func, -1, 1, N+1)
-    b = int_trap(func, -1, 1, N)
-    d = abs(a-b)
-    print ('N:%d a:%.20f b:%.20f d:%.20f' %(N, a, b, d))
+    I_n1 = int_trap(func, -1, 1, N+1)
+    I_n = int_trap(func, -1, 1, N)
+    d = abs(I_n1-I_n)
+    print ('N:%d I_n1:%.20f I_n:%.20f d:%.20f' %(N, I_n1, I_n, d))
     if (d <= tol):
         print(N)
         break
