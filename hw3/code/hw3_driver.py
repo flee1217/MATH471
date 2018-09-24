@@ -30,7 +30,7 @@ for N in range(1,3000):
     a = int_trap(func, -1, 1, N+1)
     b = int_trap(func, -1, 1, N)
     d = abs(a-b)
-    print ('N:%d a:%.20f b:%.20f d:%.20f %(N, a, b, d)')
+    print ('N:%d a:%.20f b:%.20f d:%.20f' %(N, a, b, d))
     if (d <= tol):
         print(N)
         break
