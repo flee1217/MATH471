@@ -70,18 +70,26 @@ for i in range(len(fcn_list)):
 
 n_upper = 100
 LGL_ints = [np.zeros(n_upper), np.zeros(n_upper)]
+LGL_errors = [np.zeros(n_upper), np.zeros(n_upper)]
 
 for i in range(len(fcn_list)):
     for N in range(1,n_upper + 1):
+        (nodes_,weights_) = lglnodes(N+1)
         (nodes,weights) = lglnodes(N)
+        f_ = fcn_list[i](nodes_)
         f = fcn_list[i](nodes)
+        approx_integral_ = sum(f_ * weights_ )
         approx_integral = sum(f * weights)
         LGL_ints[i][N-1] = approx_integral
+        LGL_errors[i][N-1] = abs(approx_integral_ - approx_integral)
 
     g, gplot = plt.subplots()
     ns = range(1, n_upper + 1)
 
     print(LGL_ints[i])
-    gplot.plot(ns, LGL_ints[i])
+    gplot.loglog(ns, LGL_errors[i],
+               ns, [np.e ** (-.5*n) for n in ns],
+               ns, [np.e ** (-1*n) for n in ns],
+               ns, [np.e ** (-1.5*n) for n in ns])
     plt.show()
 
