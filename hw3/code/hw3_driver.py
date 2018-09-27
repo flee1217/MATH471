@@ -1,5 +1,5 @@
 from scipy import *
-# from lglnodes import lglnodes
+from lglnodes import lglnodes
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -50,6 +50,7 @@ partition_limit = 1000
 
 errors = [np.zeros(partition_limit), np.zeros(partition_limit)]
 
+'''
 for i in range(len(fcn_list)):
     for N in range(1,partition_limit):
         a = int_trap(fcn_list[i], -1, 1, N+1)
@@ -65,3 +66,22 @@ for i in range(len(fcn_list)):
                  ns, [1.0/(n**3) for n in ns],
                  ns, [1.0/(n**4) for n in ns])
     plt.show()
+'''
+
+n_upper = 100
+LGL_ints = [np.zeros(n_upper), np.zeros(n_upper)]
+
+for i in range(len(fcn_list)):
+    for N in range(1,n_upper + 1):
+        (nodes,weights) = lglnodes(N)
+        f = fcn_list[i](nodes)
+        approx_integral = sum(f * weights)
+        LGL_ints[i][N-1] = approx_integral
+
+    g, gplot = plt.subplots()
+    ns = range(1, n_upper + 1)
+
+    print(LGL_ints[i])
+    gplot.plot(ns, LGL_ints[i])
+    plt.show()
+
