@@ -17,8 +17,9 @@ def f1(k):
         return np.exp( np.cos( k * x ) )
     return f1_actual
 
-# change k to np.pi to see minimal number of partitions N
-# needed to get within some tolerance tol
+################################################################################
+# Finding N that gives successive iteration error under a given tolerance
+#
 # d is absolute difference between trapezoidal integration
 # given N+1 and N partitions
 #   d = | I_T(n+1) - I_T(n) |
@@ -30,10 +31,13 @@ tol = 10 ** (-10)
 fcn_list = [f1(np.pi), f1(np.pi ** 2)]
 fcn_names = ['pi','pi^2']
 
+initial_N = 1
 print('Iterating through N to find when d = abs(I_(N+1) - I_(N)) < 10^-10')
 for i in range(len(fcn_list)):
     print('For k = %s...' %fcn_names[i])
-    for N in range(1,3000):
+    if (i == 1):
+        initial_N = 2800
+    for N in range(initial_N,3000):
         I_n1 = int_trap(fcn_list[i], -1, 1, N+1)
         I_n = int_trap(fcn_list[i], -1, 1, N)
         d = abs( I_n1 - I_n )
@@ -41,10 +45,10 @@ for i in range(len(fcn_list)):
             print ('N:%d d:%.15f' %(N, d))
             break
 
-
-# now we want to plot the error
+################################################################################
+# Plotting Error for Trapezoid Quadrature
 #
-# error here is defined as presented in the assignment specification
+# error is defined as presented in the assignment specification
 # for problem 1
 # error_N+1 = | I_T_(N+1) - I_T_(N) |
 
@@ -54,18 +58,26 @@ partition_limit = 1000
 
 errors = [np.zeros(partition_limit), np.zeros(partition_limit)]
 
-
+print('generating trapezoid integration error plot...')
+# computing the successive iteration errors and storing data
+# in errors[]
 for i in range(len(fcn_list)):
     for N in range(1,partition_limit):
         a = int_trap(fcn_list[i], -1, 1, N+1)
         b = int_trap(fcn_list[i], -1, 1, N)
         errors[i][N-1] = abs(a - b)
-    
+
+# creating a figure and axes object (from a factory?)
+# to plot our error data using trapezoid quadrature
 f, fplot = plt.subplots()
 ns = range(1,partition_limit + 1)
 
+# plotting data along with guiding convergence lines for
+# ease of interpretation
 for i in range(len(fcn_list)):
     fplot.loglog(ns, errors[i], linewidth = 2)
+
+# adding guiding plots using list comprehensions
 fplot.loglog(ns, [1.0/n for n in ns],
              ns, [1.0/(n**2) for n in ns],
              ns, [1.0/(n**3) for n in ns],
@@ -73,6 +85,7 @@ fplot.loglog(ns, [1.0/n for n in ns],
 
 # formatting
 plt.grid(True)
+fplot.set_title('$(\delta_{abs})_n   for   f(x) = e^{\cos(k x)}$')
 fplot.set_ylim( 10 ** -16, 5)
 fplot.set_xlabel('$n$')
 fplot.set_ylabel('$error$',
@@ -90,13 +103,21 @@ f.savefig('int_trap_error_plot.png',
           format = 'png',
           bbox_inches = 'tight',
           pad_inches = 0.1,)
-#    plt.show()
+print('Done!')
 
-
+################################################################################
+# Plotting Error using Gauss Quadrature as a function of N, the argument to
+# lglnodes(n) found in lglnodes.py, which returns a tuple of function inputs and
+# associated weights
+#
+#
 n_upper = 100
 LGL_ints = [np.zeros(n_upper), np.zeros(n_upper)]
 LGL_errors = [np.zeros(n_upper), np.zeros(n_upper)]
 
+print('generating gauss quadrature error plot...')
+# computing integration error over successive integrations
+# using lglnodes (gauss quadrature)
 for i in range(len(fcn_list)):
     for N in range(1,n_upper + 1):
         (nodes_,weights_) = lglnodes(N+1)
@@ -108,17 +129,21 @@ for i in range(len(fcn_list)):
         LGL_ints[i][N-1] = approx_integral
         LGL_errors[i][N-1] = abs(approx_integral_ - approx_integral)
 
+# getting a figure and axes to work with in generating
+# the gauss quadrature error
 g, gplot = plt.subplots()
 ns = range(1, n_upper + 1)
 
+# plotting data with guiding exponential convergence lines
+# for ease of interpretation
 for i in range(len(fcn_list)):
     gplot.loglog(ns, LGL_errors[i], linewidth = 2)
-
 gplot.loglog(ns, [np.e ** (-.5*n) for n in ns],
              ns, [np.e ** (-1*n) for n in ns],
              ns, [np.e ** (-1.5*n) for n in ns])
   
 # formatting
+gplot.set_title('$(\delta_{abs})_n   for   f(x) = e^{\cos(k x)} using  Gauss  quadrature$')
 gplot.set_ylim( 10 ** -16, 5)
 gplot.set_xlabel('$n$')
 gplot.set_ylabel('$error$',
@@ -138,6 +163,7 @@ g.savefig('lgl_error_plot.png',
           format = 'png',
           bbox_inches = 'tight',
           pad_inches = 0.1,)
-#    plt.show()
+print('Done!')
 
-
+# End
+################################################################################
