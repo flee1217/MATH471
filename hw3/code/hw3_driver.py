@@ -28,7 +28,7 @@ def f1(k):
 
 k = np.pi * np.pi
 tol = 10 ** (-10)
-t=zeros((2,2))
+t = zeros((2,2))
 
 fcn_list = [f1(np.pi), f1(np.pi ** 2)]
 fcn_names = ['pi','pi^2']
@@ -89,12 +89,13 @@ fplot.loglog(ns, [1.0/n for n in ns],
 
 # formatting
 plt.grid(True)
-fplot.set_title('Trapezoid Rule Error vs $n$',
+fplot.set_title('Trapezoidal Rule: Error vs $n$',
                 fontsize = 16)
+fplot.set_xlim(1, partition_limit)
 fplot.set_ylim( 10 ** -16, 5)
 fplot.set_xlabel('$n$',
                  fontsize = 16)
-fplot.set_ylabel('$(\delta_{abs})_{n+1}$',
+fplot.set_ylabel('$(\delta_{abs})_{n+1}$\n',
                  fontsize = 16,
                  rotation = 0,
                  verticalalignment = 'center',
@@ -149,12 +150,12 @@ gplot.loglog(ns, [np.e ** (-.5*n) for n in ns],
              ns, [np.e ** (-1.5*n) for n in ns])
   
 # formatting
-gplot.set_title('Gaussian Quadrature Error vs $n$',
+gplot.set_title('Gaussian Quadrature: Error vs $n$',
                 fontsize = 16)
 gplot.set_ylim( 10 ** -16, 5)
 gplot.set_xlabel('$n$',
                  fontsize = 16)
-gplot.set_ylabel('$(\delta_{abs})_{n+1}$',
+gplot.set_ylabel('$(\delta_{abs})_{n+1}$\n',
                  fontsize = 16,
                  rotation = 0,
                  verticalalignment = 'center',
@@ -184,8 +185,16 @@ for i in range(len(fcn_list)):
             print LGL_errors[i][x]
             break 
 print t
-savetxt('table1.tex',t,fmt=['%d','%d'], delimiter='  &  ',newline=' \\\\\n')
+'''
+methods = ['Trapezoid','Gaussian']
+s1 = [methods[0], (str(x) for x in t[0].tolist()) ]
+s1 = [ 
+s2 = t[1].tolist()
 
+
+s1 = 
+savetxt('table1.tex',s.T,fmt='%s %d %d', delimiter='  &  ',newline=' \\\\\n')
+'''
                                                                        
 # End
 ################################################################################
