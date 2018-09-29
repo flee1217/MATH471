@@ -28,7 +28,7 @@ def f1(k):
 
 k = np.pi * np.pi
 tol = 10 ** (-10)
-t = zeros((2,2))
+t = np.zeros((2,2))
 
 fcn_list = [f1(np.pi), f1(np.pi ** 2)]
 fcn_names = ['pi','pi^2']
@@ -185,16 +185,15 @@ for i in range(len(fcn_list)):
             print LGL_errors[i][x]
             break 
 print t
-'''
-methods = ['Trapezoid','Gaussian']
-s1 = [methods[0], (str(x) for x in t[0].tolist()) ]
-s1 = [ 
-s2 = t[1].tolist()
 
+s1 = [str(int(i)) for i in t[0]]
+s2 = [str(int(i)) for i in t[1]]
+s = [['Trapezoid'] + s1,
+     ['Gaussian'] + s2]
 
-s1 = 
-savetxt('table1.tex',s.T,fmt='%s %d %d', delimiter='  &  ',newline=' \\\\\n')
-'''
+print s
+savetxt('table1.tex',s,fmt='%s', delimiter='  &  ',newline=' \\\\\n')
+
                                                                        
 # End
 ################################################################################
