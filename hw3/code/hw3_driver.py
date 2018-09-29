@@ -165,5 +165,21 @@ g.savefig('lgl_error_plot.png',
           pad_inches = 0.1,)
 print('Done!')
 
+################################################################################   
+# Table for Task 3
+
+t=zeros((2,2))
+
+for i in range(len(fcn_list)):
+    for x in range(len(LGL_errors[0])):
+        if LGL_errors[i][x]<=10**-10:
+            print x+2
+            t[1][i]=x+2
+            print LGL_errors[i][x]
+            break 
+print t
+
+
+                                                                       
 # End
 ################################################################################
