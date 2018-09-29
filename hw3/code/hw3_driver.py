@@ -1,3 +1,4 @@
+
 from scipy import *
 from lglnodes import lglnodes
 import numpy as np
@@ -27,6 +28,7 @@ def f1(k):
 
 k = np.pi * np.pi
 tol = 10 ** (-10)
+t=zeros((2,2))
 
 fcn_list = [f1(np.pi), f1(np.pi ** 2)]
 fcn_names = ['pi','pi^2']
@@ -42,6 +44,7 @@ for i in range(len(fcn_list)):
         I_n = int_trap(fcn_list[i], -1, 1, N)
         d = abs( I_n1 - I_n )
         if (d <= tol):
+            t[0][i]=N+1
             print ('N:%d d:%.15f' %(N, d))
             break
 
@@ -66,6 +69,7 @@ for i in range(len(fcn_list)):
         a = int_trap(fcn_list[i], -1, 1, N+1)
         b = int_trap(fcn_list[i], -1, 1, N)
         errors[i][N-1] = abs(a - b)
+
 
 # creating a figure and axes object (from a factory?)
 # to plot our error data using trapezoid quadrature
@@ -168,8 +172,6 @@ print('Done!')
 ################################################################################   
 # Table for Task 3
 
-t=zeros((2,2))
-
 for i in range(len(fcn_list)):
     for x in range(len(LGL_errors[0])):
         if LGL_errors[i][x]<=10**-10:
@@ -178,7 +180,7 @@ for i in range(len(fcn_list)):
             print LGL_errors[i][x]
             break 
 print t
-
+savetxt('table1.tex',t,fmt=['%d','%d'], delimiter='  &  ',newline=' \\\\\n')
 
                                                                        
 # End
