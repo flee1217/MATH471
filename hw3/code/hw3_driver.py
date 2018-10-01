@@ -1,8 +1,9 @@
-
 from scipy import *
 from lglnodes import lglnodes
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.collections import PolyCollection
+from matplotlib.patches import Polygon
 
 def int_trap(f, a, b, n):
     h = float(b - a) / n
@@ -28,6 +29,8 @@ def f1(k):
 
 k = np.pi * np.pi
 tol = 10 ** (-10)
+
+# t holds the min N to get quadrature error within the given tolerance 10^-10
 t = np.zeros((2,2))
 
 fcn_list = [f1(np.pi), f1(np.pi ** 2)]
@@ -56,6 +59,51 @@ for i in range(len(fcn_list)):
 # error_N+1 = | I_T_(N+1) - I_T_(N) |
 
 
+INTEGRATION_COLOR = (1.0,
+                     0.27059,
+                     0.0)
+
+xs = np.linspace(-1.0, 1.0, 1000)
+ys = fcn_list[0](xs)
+t_xs = np.linspace(-1.0, 1.0, t[0][0])
+t_ys = fcn_list[0](t_xs)
+
+j, jplot = plt.subplots()
+
+x_names = ['$x_{%d}$' %i for i in range(12)]
+
+jplot.plot(xs, ys, color = 'k')
+jplot.plot(t_xs, t_ys, color = INTEGRATION_COLOR)
+jplot.scatter(t_xs, t_ys, color = INTEGRATION_COLOR)
+
+plt.xticks(t_xs, x_names)
+
+width = t_xs[1] - t_xs[0]
+
+for k in range(int(t[0][0]) - 1):
+    p = Polygon(xy= [(t_xs[k]  , 0         ),
+                     (t_xs[k]  , t_ys[k]   ),
+                     (t_xs[k+1], t_ys[k+1] ),
+                     (t_xs[k+1], 0         )],
+                alpha = 0.05,
+                color = INTEGRATION_COLOR,
+                )
+    jplot.add_patch(p)
+
+# formatting
+jplot.set_xlim(-1.0,1.0)
+jplot.set_title('Trapezoid Zones')
+jplot.set_xlabel('$x$')
+jplot.set_ylabel('$y$',
+                 rotation=0)
+plt.grid(True)
+
+j.savefig('trapezoid_plot.png',
+          dpi = None,
+          format = 'png',
+          bbox_inches = 'tight',
+          pad_inches = 0.1,)
+
 
 partition_limit = 1000
 
@@ -69,6 +117,7 @@ for i in range(len(fcn_list)):
         a = int_trap(fcn_list[i], -1, 1, N+1)
         b = int_trap(fcn_list[i], -1, 1, N)
         errors[i][N-1] = abs(a - b)
+        
 
 
 # creating a figure and axes object (from a factory?)
@@ -194,6 +243,6 @@ s = [['Trapezoid'] + s1,
 print s
 savetxt('table1.tex',s,fmt='%s', delimiter='  &  ',newline=' \\\\\n')
 
-                                                                       
+                                                          
 # End
 ################################################################################
