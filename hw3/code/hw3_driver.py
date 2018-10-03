@@ -72,7 +72,7 @@ j, jplot = plt.subplots()
 
 x_names = ['$x_{%d}$' %i for i in range(12)]
 
-jplot.plot(xs, ys, color = 'k')
+jplot.plot(xs, ys, color = 'b')
 jplot.plot(t_xs, t_ys, color = INTEGRATION_COLOR)
 jplot.scatter(t_xs, t_ys, color = INTEGRATION_COLOR)
 
@@ -104,6 +104,67 @@ j.savefig('trapezoid_plot.png',
           bbox_inches = 'tight',
           pad_inches = 0.1,)
 
+################################################################################
+# Plotting the visualization of gauss quadrature on k = pi^2
+
+k, kplot = plt.subplots()
+
+f_xs = np.linspace(-1.1, 1.1, 1000)
+f_ys = fcn_list[0](f_xs)
+
+(g_xs, g_ws) = lglnodes(19)
+g_ys = fcn_list[0](g_xs)
+
+tick_xs = np.linspace(-1.0,1.0,5)
+
+plt.xticks(tick_xs)
+
+kplot.set_title('Gaussian Quadrature')
+
+kplot.set_ylabel('$f(x) \n$',
+                 rotation = 0,
+                 verticalalignment = 'center',
+                 rotation_mode = 'anchor',
+                 color = 'b')
+kplot.plot(f_xs, f_ys,
+           color = 'b')
+kplot.tick_params('y',
+                  colors = 'b')
+kplot.set_xlim(-1.1,1.1)
+
+lplot = kplot.twinx()
+lplot.set_ylabel('$f(x) w(x)$',
+                 rotation = 0,
+                 verticalalignment = 'center',
+                 rotation_mode = 'anchor',
+                 color = 'k')
+
+for i in range(len(g_xs)):
+    lplot.plot([g_xs[i], g_xs[i]],[0,g_ys[i]*g_ws[i]],
+               color = 'k')
+'''
+lplot.bar(g_xs,g_ys*g_ws,
+          width = 0.01,
+          align = 'center',
+          linewidth = 0,
+          color = 'k')
+'''
+lplot.tick_params('y',
+                  colors = 'k')
+lplot.set_xlim(-1.1,1.1)
+
+plt.grid(True,
+         which = 'both',
+         axis = 'both')
+
+k.savefig('lgl_plot.png',
+          dpi = None,
+          format = 'png',
+          bbox_inches = 'tight',
+          pad_inches = 0.1,)
+
+# end gaussian line plotting
+################################################################################
 
 partition_limit = 1000
 
@@ -194,9 +255,9 @@ ns = range(1, n_upper + 1)
 # for ease of interpretation
 for i in range(len(fcn_list)):
     gplot.loglog(ns, LGL_errors[i], linewidth = 2)
-gplot.loglog(ns, [np.e ** (-.5*n) for n in ns],
-             ns, [np.e ** (-1*n) for n in ns],
-             ns, [np.e ** (-1.5*n) for n in ns])
+gplot.loglog(ns, [2 ** ((1)(4-n)) for n in ns],
+             ns, [2 ** ((2)(4-n)) for n in ns],
+             ns, [2 ** ((3)(4-n)) for n in ns])
   
 # formatting
 gplot.set_title('Gaussian Quadrature: Error vs $n$',
