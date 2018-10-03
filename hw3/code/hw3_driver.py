@@ -37,7 +37,8 @@ fcn_list = [f1(np.pi), f1(np.pi ** 2)]
 fcn_names = ['pi','pi^2']
 
 initial_N = 1
-print('Iterating through N to find when d = abs(I_(N+1) - I_(N)) < 10^-10')
+print('Iterating through N to find when')
+print('d = abs(int_trap(f,a,b,N+1) - int_trap(f,a,b,N)) < 10^-10')
 for i in range(len(fcn_list)):
     print('For k = %s...' %fcn_names[i])
     if (i == 1):
@@ -92,7 +93,7 @@ for k in range(int(t[0][0]) - 1):
 
 # formatting
 jplot.set_xlim(-1.0,1.0)
-jplot.set_title('Trapezoid Zones')
+jplot.set_title('Trapezoidal Rule')
 jplot.set_xlabel('$x$')
 jplot.set_ylabel('$y$',
                  rotation=0)
@@ -121,7 +122,7 @@ plt.xticks(tick_xs)
 
 kplot.set_title('Gaussian Quadrature')
 
-kplot.set_ylabel('$f(x) \n$',
+kplot.set_ylabel('$f(x)$     ',
                  rotation = 0,
                  verticalalignment = 'center',
                  rotation_mode = 'anchor',
@@ -191,11 +192,11 @@ ns = range(1,partition_limit + 1)
 for i in range(len(fcn_list)):
     fplot.loglog(ns, errors[i], linewidth = 2)
 
-# adding guiding plots using list comprehensions
-fplot.loglog(ns, [1.0/n for n in ns],
-             ns, [1.0/(n**2) for n in ns],
-             ns, [1.0/(n**3) for n in ns],
-             ns, [1.0/(n**4) for n in ns])
+# adding guiding plots to aid visualization of convergence rates
+fplot.loglog(ns, [n ** -1 for n in ns],
+             ns, [n ** -2 for n in ns],
+             ns, [n ** -3 for n in ns],
+             ns, [n ** -4 for n in ns])
 
 # formatting
 plt.grid(True)
@@ -255,9 +256,9 @@ ns = range(1, n_upper + 1)
 # for ease of interpretation
 for i in range(len(fcn_list)):
     gplot.loglog(ns, LGL_errors[i], linewidth = 2)
-gplot.loglog(ns, [2 ** ((1)(4-n)) for n in ns],
-             ns, [2 ** ((2)(4-n)) for n in ns],
-             ns, [2 ** ((3)(4-n)) for n in ns])
+gplot.loglog(ns, [2 ** ((1.0)*(4-n)) for n in ns],
+             ns, [2 ** ((2.0)*(4-n)) for n in ns],
+             ns, [2 ** ((3.0)*(4-n)) for n in ns])
   
 # formatting
 gplot.set_title('Gaussian Quadrature: Error vs $n$',
@@ -273,7 +274,7 @@ gplot.set_ylabel('$(\delta_{abs})_{n+1}$\n',
 plt.grid(True)
 
 # more formatting
-gplot.legend(['$k = \pi$','$k = \pi^{2}$','$e^{-n/2}$','$e^{-n}$','$e^{-3n/2}$'],
+gplot.legend(['$k = \pi$','$k = \pi^{2}$','$2^{4-n}$','$2^{2(4-n)}$','$2^{3(4-n)}$'],
              loc = (.05,0.05))
 
 # saving plot
@@ -290,18 +291,16 @@ print('Done!')
 for i in range(len(fcn_list)):
     for x in range(len(LGL_errors[0])):
         if LGL_errors[i][x]<=10**-10:
-            print x+2
             t[1][i]=x+2
-            print LGL_errors[i][x]
             break 
-print t
 
+# saving the minimal satisfying N values within a formatted string list
 s1 = [str(int(i)) for i in t[0]]
 s2 = [str(int(i)) for i in t[1]]
 s = [['Trapezoid'] + s1,
      ['Gaussian'] + s2]
 
-print s
+# dumping into a .tex file for use in project report
 savetxt('table1.tex',s,fmt='%s', delimiter='  &  ',newline=' \\\\\n')
 
                                                           
