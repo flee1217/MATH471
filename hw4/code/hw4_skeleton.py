@@ -74,8 +74,8 @@ def compute_fd(n, nt, k, f, fpp_num):
     # For the above example, that means including 
     #   - the y=0.66 row of points for the k=0 case
     #   - the y=0.33 row of points for the k=1 case
-    start_halo = start - 1 if k != 0 else 0 # <start - 1, unless k == 0>
-    end_halo = end + 1 if k != (nt-1) else end # <end + 1, unless k == (nt-1)>
+    start_halo = start - 1 if k != 0 else start # <start - 1, unless k == 0>
+    end_halo = end + 1 if k != (nt-1) else end  # <end + 1, unless k == (nt-1)>
 
     
     # Construct local CSR matrix.  Here, you're given that function for free
@@ -89,7 +89,8 @@ def compute_fd(n, nt, k, f, fpp_num):
     # Task:
     # Construct grid of evenly spaced points over this thread's halo region 
     x_pts = linspace(0,1,n)
-    y_pts = linspace(start_halo*h,(end_halo-1.)*h,n/nt)# <linspace(start_halo*h, ... )> 
+    y_pts = linspace(start_halo*h,(end_halo-1)*h,1+end_halo-start_halo)
+        # <linspace(start_halo*h, ... )> 
     
     # Task:
     # There is no coding to do here, but examime how meshgrid works and 
