@@ -1,9 +1,11 @@
 from scipy import *
 from scipy import sparse
 import time
+import numpy as np
 from threading import Thread
 from matplotlib import pyplot
 from poisson import poisson
+from scipy.linalg import norm as norm
 
 def l2norm(e, h):
     '''
@@ -16,7 +18,7 @@ def l2norm(e, h):
     # Return the L2-norm, i.e., the square roof of the integral of e^2
     # Assume a uniform grid in x and y, and apply the midpoint rule.
     # Assume that each grid point represents the midpoint of an equally sized region
-    return  <insert code>
+    return norm(e)
 
 
 def compute_fd(n, nt, k, f, fpp_num):
@@ -63,7 +65,7 @@ def compute_fd(n, nt, k, f, fpp_num):
     
     # Task: 
     # Compute start, end, start_halo, and end_halo
-    start = <first row owned by thread k> 
+    start = <first row owned by thread k>
     end = <first row owned by thread k+1>
     
     # Task:
@@ -154,8 +156,8 @@ else:
 
 # Task:
 # Initialize your data arrays
-error = <array of zeros of size num_threads X size of NN >
-timings = <array of zeros of size num_threads X size of NN> 
+error = np.zeros((num_threads[0],NN[0]))   # <array of zeros of size num_threads X size of NN >
+timings = np.zeros((num_threads[0],NN[0])) # <array of zeros of size num_threads X size of NN> 
 
 # Loop over various numbers of threads
 for i,nt in enumerate(num_threads):
@@ -164,11 +166,11 @@ for i,nt in enumerate(num_threads):
         
         # Task:
         # Initialize output array
-        fpp_numeric = <array of zeros of appropriate size> 
+        fpp_numeric = np.zeros((NN-2,NN-2)) # <array of zeros of appropriate size> 
         
         # Task:
         # Choose the number of timings to do for each thread number, domain size combination 
-        ntimings = <insert>
+        ntimings = 10 # <insert>
 
         # Time over 10 tries
         min_time = 10000
@@ -180,13 +182,14 @@ for i,nt in enumerate(num_threads):
             for k in range(nt):
                 # Task:
                 # Finish this call to Thread(), passing in the correct target and arguments
-                t_list.append(Thread(target=<insert>, args=<insert tuple of arguments> )) 
+                t_list.append(Thread(target=compute_fd, args=(NN,num_threads,i,fcn,fpp_numeric) )) 
 
             start = time.time()
-            # Task:
             # Launch and Join Threads
-            < loop over all the threads in t_list and start them >
-            < loop over all the threads in t_list and join them >
+            for t in t_list:
+                t.start()
+            for t in t_list:
+                t.join()
             end = time.time()
             min_time = min(end-start, min_time)
         ##
@@ -215,8 +218,8 @@ for i,nt in enumerate(num_threads):
         
         # Task:
         # Compute error
-        h = <insert> 
-        e = <insert> 
+        h = # <insert> 
+        e = # <insert> 
         error[i,j] = <insert l2norm> 
         timings[i,j] = min_time
         print min_time
