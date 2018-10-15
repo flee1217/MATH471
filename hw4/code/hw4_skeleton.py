@@ -105,18 +105,18 @@ def compute_fd(n, nt, k, f, fpp_num):
     # Task:
     # Compute the correct range of output values for this thread
     output = A*f_vals
-    if k == 0:
-        output = output[:-n]
+    if k == 0 and nt != 1:
+        output = output[:-1]
     elif k == (nt - 1):
-        output = output[n:]
+        output = output[1:]
     else:
-        output = output[n:-n]
+        output = output[1:-1]
     # < output array should be truncated to exclude values in the halo region >
     # < you will need special cases to account for the first and last threads >
     
     # Task:
     # Set the output array
-    fpp_num[ '''<insert indices>''' ] = # <insert output> 
+    fpp_num[start:end '''<insert indices>''' ] = output# <insert output> 
 
 
 def fcn(x,y):
@@ -132,7 +132,14 @@ def fcnpp(x,y):
     # Task:
     # Fill this function in with the correct second derivative.  You end up with terms like
     # -cos((x+1)**(1./3.) + (y+1)**(1./3.))*(1./9.)*(x+1)**(-4./3)
-    return <insert code> 
+    return -sin( (x+1)**(1./3.) + (y+1)**(1./3.) )*(1./9.)*(x+1)**(-4./3.) - \
+            sin( (x+1)**(1./3.) + (y+1)**(1./3.) )*(1./9.)*(y+1)**(-4./3.) + \
+          2*sin( (x+1)**(1./3.) + (y+1)**(1./3.) )*(1./9.)*(x+1)**(-5./3.) + \
+          2*sin( (x+1)**(1./3.) + (y+1)**(1./3.) )*(1./9.)*(y+1)**(-5./3.) - \
+            cos( (x+1)**(1./3.) + (y+1)**(1./3.) )*(1./9.)*(x+1)**(-4./3.) - \
+            cos( (x+1)**(1./3.) + (y+1)**(1./3.) )*(1./9.)*(y+1)**(-4./3.) - \
+          2*cos( (x+1)**(1./3.) + (y+1)**(1./3.) )*(1./9.)*(x+1)**(-5./3.) - \
+          2*cos( (x+1)**(1./3.) + (y+1)**(1./3.) )*(1./9.)*(y+1)**(-5./3.)
 
 
 ##
@@ -173,7 +180,7 @@ for i,nt in enumerate(num_threads):
         
         # Task:
         # Initialize output array
-        fpp_numeric = np.zeros((NN[j]-2,NN[j]-2)) # <array of zeros of appropriate size> 
+        fpp_numeric = np.zeros((NN[j],NN[j])) # <array of zeros of appropriate size> 
         
         # Task:
         # Choose the number of timings to do for each thread number, domain size combination 
