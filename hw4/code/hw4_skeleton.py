@@ -65,8 +65,8 @@ def compute_fd(n, nt, k, f, fpp_num):
     
     # Task: 
     # Compute start, end, start_halo, and end_halo
-    start = (k)*(n./nt.)
-    end = (k+1)*(n./nt.)
+    start = (k)*(n/nt)
+    end = (k+1)*(n/nt)
     
     # Task:
     # Halo regions essentially expand a thread's local domain to include enough
@@ -89,7 +89,7 @@ def compute_fd(n, nt, k, f, fpp_num):
     # Task:
     # Construct grid of evenly spaced points over this thread's halo region 
     x_pts = linspace(0,1,n)
-    y_pts = linspace(start_halo*h,(end_halo-1)*h,1+end_halo-start_halo)
+    y_pts = linspace(start_halo*h,(end_halo-1)*h,end_halo-start_halo)
         # <linspace(start_halo*h, ... )> 
     
     # Task:
@@ -105,12 +105,18 @@ def compute_fd(n, nt, k, f, fpp_num):
     # Task:
     # Compute the correct range of output values for this thread
     output = A*f_vals
-    < output array should be truncated to exclude values in the halo region >
-    < you will need special cases to account for the first and last threads >
+    if k == 0:
+        output = output[:-n]
+    elif k == (nt - 1):
+        output = output[n:]
+    else:
+        output = output[n:-n]
+    # < output array should be truncated to exclude values in the halo region >
+    # < you will need special cases to account for the first and last threads >
     
     # Task:
     # Set the output array
-    fpp_num[ <insert indices> ] = <insert output> 
+    fpp_num[ '''<insert indices>''' ] = # <insert output> 
 
 
 def fcn(x,y):
@@ -167,7 +173,7 @@ for i,nt in enumerate(num_threads):
         
         # Task:
         # Initialize output array
-        fpp_numeric = np.zeros((NN-2,NN-2)) # <array of zeros of appropriate size> 
+        fpp_numeric = np.zeros((NN[j]-2,NN[j]-2)) # <array of zeros of appropriate size> 
         
         # Task:
         # Choose the number of timings to do for each thread number, domain size combination 
@@ -183,7 +189,7 @@ for i,nt in enumerate(num_threads):
             for k in range(nt):
                 # Task:
                 # Finish this call to Thread(), passing in the correct target and arguments
-                t_list.append(Thread(target=compute_fd, args=(NN,num_threads,i,fcn,fpp_numeric) )) 
+                t_list.append(Thread(target=compute_fd, args=(NN[j],num_threads[i],i,fcn,fpp_numeric) )) 
 
             start = time.time()
             # Launch and Join Threads
