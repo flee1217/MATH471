@@ -146,7 +146,7 @@ def fcnpp(x,y):
 ##
 # Here are three problem size options for running.  The instructor has chosen these
 # for you.
-option = 2
+option = 1
 if option == 1:
     # Choose this if doing a final run on CARC
     NN = array([840*6])
