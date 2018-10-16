@@ -3,7 +3,7 @@ from scipy import sparse
 import time
 import numpy as np
 from threading import Thread
-from matplotlib import pyplot as plt
+# from matplotlib import pyplot as plt
 from poisson import poisson
 
 def l2norm(e, h):
