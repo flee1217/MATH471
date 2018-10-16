@@ -3,9 +3,8 @@ from scipy import sparse
 import time
 import numpy as np
 from threading import Thread
-from matplotlib import pyplot
+from matplotlib import pyplot as plt
 from poisson import poisson
-from scipy.linalg import norm as norm
 
 def l2norm(e, h):
     '''
@@ -18,7 +17,7 @@ def l2norm(e, h):
     # Return the L2-norm, i.e., the square roof of the integral of e^2
     # Assume a uniform grid in x and y, and apply the midpoint rule.
     # Assume that each grid point represents the midpoint of an equally sized region
-    return norm(e)
+    return (h**2)*(np.sum(e**2)**(1./2.))
 
 
 def compute_fd(n, nt, k, f, fpp_num):
@@ -105,18 +104,20 @@ def compute_fd(n, nt, k, f, fpp_num):
     # Task:
     # Compute the correct range of output values for this thread
     output = A*f_vals
-    if k == 0 and nt != 1:
-        output = output[:-1]
+    
+    if k == 0:
+        if nt != 1:
+            output = output[:-n]
     elif k == (nt - 1):
-        output = output[1:]
+        output = output[n:]
     else:
-        output = output[1:-1]
+        output = output[n:-n]
     # < output array should be truncated to exclude values in the halo region >
     # < you will need special cases to account for the first and last threads >
     
     # Task:
     # Set the output array
-    fpp_num[start:end '''<insert indices>''' ] = output# <insert output> 
+    fpp_num[start*n:end*n] = output # <insert output> 
 
 
 def fcn(x,y):
@@ -145,7 +146,7 @@ def fcnpp(x,y):
 ##
 # Here are three problem size options for running.  The instructor has chosen these
 # for you.
-option = 3
+option = 2
 if option == 1:
     # Choose this if doing a final run on CARC
     NN = array([840*6])
@@ -155,12 +156,12 @@ elif option == 2:
     # and for initial runs on CARC.  
     # You may want to start with just num_threads=[1] and debug the serial case first.
     NN = 210*arange(1,6)
-    num_threads = [1] #eventually include 2, 3, 4
+    num_threads = [1,2,3,4] #eventually include 2, 3, 4
 elif option == 3:
     # Choose this for code development and debugging on your laptop/lab machine
     # You may want to start with just num_threads=[1] and debug the serial case first.
     NN = array([6])
-    num_threads = [1] #eventually include 2,3
+    num_threads = [1,2,3] #eventually include 2,3
 else:
     print("Incorrect Option!")
 
@@ -170,8 +171,8 @@ else:
 
 # Task:
 # Initialize your data arrays
-error = np.zeros((num_threads[0],NN[0]))   # <array of zeros of size num_threads X size of NN >
-timings = np.zeros((num_threads[0],NN[0])) # <array of zeros of size num_threads X size of NN> 
+error =   np.zeros( (len(num_threads), len(NN)) ) # <array of zeros of size num_threads X size of NN >
+timings = np.zeros( (len(num_threads), len(NN)) ) # <array of zeros of size num_threads X size of NN> 
 
 # Loop over various numbers of threads
 for i,nt in enumerate(num_threads):
@@ -180,7 +181,7 @@ for i,nt in enumerate(num_threads):
         
         # Task:
         # Initialize output array
-        fpp_numeric = np.zeros((NN[j],NN[j])) # <array of zeros of appropriate size> 
+        fpp_numeric = np.zeros( NN[j] ** 2) # <array of zeros of appropriate size> 
         
         # Task:
         # Choose the number of timings to do for each thread number, domain size combination 
@@ -226,29 +227,37 @@ for i,nt in enumerate(num_threads):
         # length 10 array at those True locations
         boundary_points = (Y == 0)
         fpp_numeric[boundary_points] += (1/h**2)*fcn(X[boundary_points], Y[boundary_points]-h)
-        
+                
         # Task:
         # Account for the domain boundaries at Y == 1, X == 0, X == 1
+        y_upper = (Y == 1)
+        fpp_numeric[y_upper] += (1/h**2)*fcn(X[y_upper], Y[y_upper]+h)
         
+        x_lower = (X == 0)
+        fpp_numeric[x_lower] += (1/h**2)*fcn(X[x_lower]-h, Y[x_lower])
+        
+        x_upper = (X == 1)
+        fpp_numeric[x_upper] += (1/h**2)*fcn(X[x_upper]+h, Y[x_upper])
+
         # Task:
         # Compute error
-        h = # <insert> 
-        e = # <insert> 
-        error[i,j] = <insert l2norm> 
+        # h = # <insert> 
+        e = fpp - fpp_numeric # <insert> 
+        error[i,j] = l2norm(e,h)
         timings[i,j] = min_time
-        print min_time
+        print(min_time)
+
     ##
     # End Loop over various grid-sizes
-    print " "
+    print (" ")
     
     # Task:
     # Generate and save plot showing convergence for this thread number
     # Do not try to plot on CARC. 
-    pyplot.loglog(NN, <array slice of error values>) 
-    pyplot.loglog(NN, <reference quadratic convergence data>)
-    <insert nice formatting options with large axis labels, tick fontsizes, and large legend labels>
-    pyplot.savefig('error'+str(i)+'.png', dpi=500, format='png', bbox_inches='tight', pad_inches=0.0,)
-
+    # pyplot.loglog(NN, <array slice of error values>) 
+    # pyplot.loglog(NN, <reference quadratic convergence data>)
+    # <insert nice formatting options with large axis labels, tick fontsizes, and large legend labels>
+    # pyplot.savefig('error'+str(i)+'.png', dpi=500, format='png', bbox_inches='tight', pad_inches=0.0,)
 
 # Save timings for future use
 savetxt('timings.txt', timings)
