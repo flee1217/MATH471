@@ -1,7 +1,7 @@
 from scipy import *
 from scipy import sparse
 import time
-nnnimport numpy as np
+import numpy as np
 import sys
 from threading import Thread
 # from matplotlib import pyplot as plt
