@@ -1,13 +1,14 @@
 from scipy import *
 from scipy import sparse
 import time
-import numpy as np
+nnnimport numpy as np
+import sys
 from threading import Thread
 # from matplotlib import pyplot as plt
 from poisson import poisson
 
 def l2norm(e, h):
-    '''
+   nnn '''
     Take L2-norm of e
     '''
     # ensure e has a compatible shape for taking a dot-product
@@ -197,7 +198,7 @@ for i,nt in enumerate(num_threads):
             for k in range(nt):
                 # Task:
                 # Finish this call to Thread(), passing in the correct target and arguments
-                t_list.append(Thread(target=compute_fd, args=(NN[j],num_threads[i],i,fcn,fpp_numeric) )) 
+                t_list.append(Thread(target=compute_fd, args=(NN[j],num_threads[i],k,fcn,fpp_numeric) )) 
 
             start = time.time()
             # Launch and Join Threads
@@ -245,7 +246,6 @@ for i,nt in enumerate(num_threads):
         e = fpp - fpp_numeric # <insert> 
         error[i,j] = l2norm(e,h)
         timings[i,j] = min_time
-        print(min_time)
 
     ##
     # End Loop over various grid-sizes
