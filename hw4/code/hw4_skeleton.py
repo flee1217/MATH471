@@ -8,7 +8,7 @@ from threading import Thread
 from poisson import poisson
 
 def l2norm(e, h):
-   nnn '''
+    '''
     Take L2-norm of e
     '''
     # ensure e has a compatible shape for taking a dot-product
