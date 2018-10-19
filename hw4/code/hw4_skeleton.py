@@ -65,8 +65,14 @@ def compute_fd(n, nt, k, f, fpp_num):
     
     # Task: 
     # Compute start, end, start_halo, and end_halo
-    start = (k)*(n/nt)
-    end = (k+1)*(n/nt)
+    m = n/nt
+    while (m * nt < n):
+        m += 1
+    
+    start = (k)*(m)
+    end = (k+1)*(m)
+    if (end > n):
+        end = n
     
     # Task:
     # Halo regions essentially expand a thread's local domain to include enough
