@@ -65,7 +65,10 @@ def compute_fd(n, nt, k, f, fpp_num):
     # Task: 
     # Compute start, end, start_halo, and end_halo
     m = n/nt
-    while (m * nt < n):
+    
+    # if n and nt do not divide cleanly, the last batch of rows
+    # will be slightly shorter in length
+    if (m * nt < n):
         m += 1
     
     start = (k)*(m)
