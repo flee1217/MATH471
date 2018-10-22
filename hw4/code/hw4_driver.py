@@ -57,9 +57,6 @@ def compute_fd(n, nt, k, f, fpp_num):
     Then For the k = 1, case, the rows of the domain owned are
     y = 0.66, and x = [0, 0.33, 0.66, 1.0]
     y = 1.0,  and x = [0, 0.33, 0.66, 1.0]
-
-    We assume that n/nt divides evenly.
-
     '''
     
     # Task: 
