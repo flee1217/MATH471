@@ -270,5 +270,3 @@ for i,nt in enumerate(num_threads):
 # Save timings for future use
 savetxt('timings.txt', timings)
 savetxt('error.txt', error)
-
-
