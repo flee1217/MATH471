@@ -4,7 +4,6 @@ import time
 import numpy as np
 import sys
 from threading import Thread
-# from matplotlib import pyplot as plt
 from poisson import poisson
 
 def l2norm(e, h):
