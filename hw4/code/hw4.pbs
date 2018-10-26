@@ -5,13 +5,13 @@
 ########################################################################
 
 ## This requests 1 node, and 8 cores, which is perfect our our thread-level programming
-PBS -l nodes=1:ppn=8
+#PBS -l nodes=1:ppn=8
 
 ## This is the max run-time allowed  hr:min:sec
-PBS -l walltime=00:20:00 
+#PBS -l walltime=00:20:00 
 
 ## This is the filename for all printed output from your code
-PBS -N hw4_output
+#PBS -N hw4_output
 ########################################################################
 ########################################################################
 
