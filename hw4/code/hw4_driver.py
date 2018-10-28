@@ -17,7 +17,7 @@ def l2norm(e, h):
     # Return the L2-norm, i.e., the square roof of the integral of e^2
     # Assume a uniform grid in x and y, and apply the midpoint rule.
     # Assume that each grid point represents the midpoint of an equally sized region
-    return (h**2)*(np.sum(e**2)**(1./2.))
+    return (np.sum(e**2*h**2)**(1./2.))
 
 
 def compute_fd(n, nt, k, f, fpp_num):
