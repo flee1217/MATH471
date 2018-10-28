@@ -1,3 +1,5 @@
+import sys
 import numpy as np
-e = np.loadtxt('error.txt')
-np.savetxt('error.tex',e,fmt='%.6e', delimiter='  &  ',newline=' \\\\\n')
+s = str(sys.argv[1])
+e = np.loadtxt(s)
+np.savetxt(s + '.tex',e,fmt='%.6e', delimiter='  &  ',newline=' \\\\\n')
