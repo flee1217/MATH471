@@ -31,7 +31,7 @@ NOTE: All development and testing of this software took place on the Mac
   3) Run the following command:
     - $ python hw4_driver.py
 
-- There will be 5 files that will be created as a result of running the
+- There will be 2 files that will be created as a result of running the
     above command. The file names are as follows:
     - error.txt
     - timings.txt
