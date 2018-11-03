@@ -36,7 +36,7 @@ def RK4(f, y, t, dt, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta):
     k3 = dt*f(y+k2/2.,t+dt/2., food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta)
     k4 = dt*f(y+k3,t+dt, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta)
 
-    y = y + (1./6.)(k1 + 2*k2 + 2*k3 + k4)
+    y = y + (1./6.)*(k1 + 2*k2 + 2*k3 + k4)
 
     return y
 
@@ -60,7 +60,8 @@ def RHS(y, t, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta):
     f[0] = y[0] + gamma_1*(C(t,food_flag) - y[0])
 
     # flock calculations
-    f[1:] = y[1:] + gamma_2*(y[0] - y[1:0])
+    
+    f[1:] = y[1:] + gamma_2*(y[0] - y[1:]) # ADD OTHER FORCES HERE
     
     # Task:  Fill this in by assigning values to f
     
@@ -71,11 +72,11 @@ def RHS(y, t, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta):
 # Set up problem domain
 t0 = 0.0        # start time
 T = 10.0        # end time
-nsteps = 50     # number of time steps
+nsteps = 100     # number of time steps
 
 # Task:  Experiment with N, number of birds
 # N = 30
-N = 2
+N = 5
 
 # Task:  Experiment with the problem parameters, and understand what they do
 dt = (T - t0) / (nsteps-1.0)
@@ -85,7 +86,7 @@ alpha = 0.4
 kappa = 4.0
 rho = 2.0
 delta = 0.5
-food_flag = 0   # food_flag == 0: C(x,y) = (0.0, 0.0)
+food_flag = 1   # food_flag == 0: C(x,y) = (0.0, 0.0)
                 # food_flag == 1: C(x,y) = (sin(alpha*t), cos(alpha*t))
 
 # Intialize problem
