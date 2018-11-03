@@ -1,5 +1,6 @@
 from scipy import *
 from matplotlib import pyplot
+from operator import itemgetter
 import matplotlib.animation as manimation
 import os, sys
 
@@ -48,6 +49,56 @@ def C(t, food_flag):
         return (0.0, 0.0)
 
 
+def nearest_neighbors(b, c, k):
+    '''
+    Give locations of the nearest k neighbors of bird b
+    in the form of a list of k rows and 2 columns (x and y locations)
+    from the community c of birds
+
+    Assumptions
+    -----------
+    - 2D euclidean space (x and y locations for each bird)
+    - 1 <= k < c
+    - b is contained within c
+    - len(c) > 1
+
+    Input
+    -----
+    b: target bird
+    k: number of nearest neighbors desired
+    c: community of birds to choose from
+
+    Output
+    ------
+    n: list of nearest k neighbor locations
+    '''
+
+    n = zeros((k,2))
+
+    # first column of d holds relative dist info
+    # second column holds indices of birds in c
+    d = zeros_like(c)
+    for i in range(len(c)):
+        d[i][0] = (c[i][0]-b[0])**2 + (c[i][1]-b[1])**2
+    for h in range(len(c)):
+        d[h][1] = h
+
+    # sort this "tuple" (not really a tuple) list by
+    # relative distances
+    print(d)
+    d = array(sorted(d,key=itemgetter(0)))
+    print(d)
+
+    # hopefully the first entry in d is b so it will be
+    # the first item in the sorted dist,index list.
+    # That is why the row index in d is (i+1)
+    for i in range(k):
+        n[i][0] = c[ int(d[i+1][1]) ][0]
+        n[i][1] = c[ int(d[i+1][1]) ][1]
+
+    return n
+
+    
 def RHS(y, t, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta):
     '''
     Define the right hand side of the ODE
