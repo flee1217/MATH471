@@ -31,12 +31,15 @@ def RK4(f, y, t, dt, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta):
     '''
     
     # Task: Fill in the RK4 formula
-    k1 = f(...)
-    k2 = f(...)
-    k3 = f(...)
-    k4 = f(...)
+    k1 = dt*f(y,t, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta)
+    k2 = dt*f(y+k1/2.,t+dt/2., food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta)
+    k3 = dt*f(y+k2/2.,t+dt/2., food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta)
+    k4 = dt*f(y+k3,t+dt, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta)
 
-    return ... 
+    t = t + dt
+    y = y + (1./6.)(k1 + 2*k2 + 2*k3 + k4)
+
+    return y
 
 
 def RHS(y, t, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta):
