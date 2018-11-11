@@ -4,8 +4,6 @@ from operator import itemgetter
 import matplotlib.animation as manimation
 import os, sys
 
-# HW5 solution by Jacob
-
 def RK4(f, y, t, dt, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta):
     '''
     Carry out a step of RK4 from time t using dt
@@ -75,47 +73,71 @@ def nearest_neighbors(b, c, k):
 
     n = zeros((k,2))
 
-    # first column of d holds relative dist info
-    # second column holds indices of birds in c
+    # first column of d holds squared dist between
+    # target bird b and bird i in community c
+    # second column holds index i for each bird in c
     d = zeros_like(c)
     for i in range(len(c)):
         d[i][0] = (c[i][0]-b[0])**2 + (c[i][1]-b[1])**2
-    for h in range(len(c)):
-        d[h][1] = h
+        d[i][1] = i
 
     # sort this "tuple" (not really a tuple) list by
-    # relative distances
-    print(d)
+    # squared distance (in ascending order)
     d = array(sorted(d,key=itemgetter(0)))
-    print(d)
 
-    # hopefully the first entry in d is b so it will be
+    # the first entry in d is b so it will be
     # the first item in the sorted dist,index list.
     # That is why the row index in d is (i+1)
     for i in range(k):
-        n[i][0] = c[ int(d[i+1][1]) ][0]
-        n[i][1] = c[ int(d[i+1][1]) ][1]
+        index = int(d[i+1][1])
+        n[i][0] = c[index][0]
+        n[i][1] = c[index][1]
 
     return n
 
-    
+
 def RHS(y, t, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta):
     '''
     Define the right hand side of the ODE
+
+    input
+    -----
+    y: current flock state
+    t: current time
+    
+    output
+    ------
+    f: y'
 
     '''
     N = y.shape[0]
     f = zeros_like(y)
 
     # leader bird calculation
-    f[0] = y[0] + gamma_1*(C(t,food_flag) - y[0])
+    f[0] = gamma_1*(C(t,food_flag) - y[0])
 
     # flock calculations
     
-    f[1:] = y[1:] + gamma_2*(y[0] - y[1:]) # ADD OTHER FORCES HERE
-    
-    # Task:  Fill this in by assigning values to f
-    
+    # follow force
+    f[1:] = gamma_2*(y[0] - y[1:])
+
+    # centering force
+    center = zeros((1,2))
+    for i in range(len(y)):
+        center[0][0] += y[i][0]
+        center[0][1] += y[i][1]
+        
+    center = center/N
+    f[1:] += kappa*(center - y[1:])
+
+    # repelling force
+    for k in range(1,N):
+        nn = nearest_neighbors(y[k],y,neighbors)
+        repelling = 0.0
+        for n in nn:
+            repelling += ((y[k] - n)/((y[k] - n)**2 + delta))
+        f[k] += repelling*rho
+        
     return f
 
 
@@ -123,11 +145,10 @@ def RHS(y, t, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta):
 # Set up problem domain
 t0 = 0.0        # start time
 T = 10.0        # end time
-nsteps = 100     # number of time steps
+nsteps = 500    # number of time steps
 
 # Task:  Experiment with N, number of birds
-# N = 30
-N = 5
+N = 100
 
 # Task:  Experiment with the problem parameters, and understand what they do
 dt = (T - t0) / (nsteps-1.0)
@@ -135,33 +156,35 @@ gamma_1 = 2.0
 gamma_2 = 8.0
 alpha = 0.4
 kappa = 4.0
-rho = 2.0
-delta = 0.5
+rho = 22.0
+delta = 5.0
 food_flag = 1   # food_flag == 0: C(x,y) = (0.0, 0.0)
                 # food_flag == 1: C(x,y) = (sin(alpha*t), cos(alpha*t))
-
+neighbors = 5
 # Intialize problem
 y = rand(N,2)
 flock_diam = zeros((nsteps,))
 
 # Initialize the Movie Writer
 FFMpegWriter = manimation.writers['ffmpeg']
-writer = FFMpegWriter(fps=6)
+writer = FFMpegWriter(fps=12)
 fig = pyplot.figure(0)
 pp, = pyplot.plot([],[], 'k+') 
-rr, = pyplot.plot([],[], 'r+') 
+rr, = pyplot.plot([],[], 'r+')
+ff, = pyplot.plot([],[], 'c+')
 pyplot.xlabel(r'$X$', fontsize='large')
 pyplot.ylabel(r'$Y$', fontsize='large')
-pyplot.xlim(-3,3)       # you may need to adjust this, if your birds fly outside of this box!
-pyplot.ylim(-3,3)       # you may need to adjust this, if your birds fly outside of this box!
+pyplot.xlim(-3,3)       # may need to adjust if birds fly outside box
+pyplot.ylim(-3,3)       # may need to adjust if birds fly outside box
 
 
 # Begin writing movie frames
-with writer.saving(fig, "movie.mp4",dpi=1000):
+with writer.saving(fig, "movie.mp4",dpi=648):
 
     # First frame
     pp.set_data(y[1:,0], y[1:,1]) 
-    rr.set_data(y[0,0], y[0,1]) 
+    rr.set_data(y[0,0], y[0,1])
+    ff.set_data([C(t0,food_flag)[0]],[C(t0,food_flag)[1]])
     writer.grab_frame()
 
     t = t0
@@ -174,7 +197,8 @@ with writer.saving(fig, "movie.mp4",dpi=1000):
         
         # Movie frame
         pp.set_data(y[:,0], y[:,1]) 
-        rr.set_data(y[0,0], y[0,1]) 
+        rr.set_data(y[0,0], y[0,1])
+        ff.set_data([C(t,food_flag)[0]],[C(t,food_flag)[1]])
         writer.grab_frame()
         
 
