@@ -1,8 +1,9 @@
 from scipy import *
 from matplotlib import pyplot
 from operator import itemgetter
+import numpy as np
 import matplotlib.animation as manimation
-import os, sys
+import os, sys, random
 
 def RK4(f, y, t, dt, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta):
     '''
@@ -71,12 +72,12 @@ def nearest_neighbors(b, c, k):
     n: list of nearest k neighbor locations
     '''
 
-    n = zeros((k,2))
+    n = np.zeros((k,2))
 
     # first column of d holds squared dist between
     # target bird b and bird i in community c
     # second column holds index i for each bird in c
-    d = zeros_like(c)
+    d = np.zeros_like(c)
     for i in range(len(c)):
         d[i][0] = (c[i][0]-b[0])**2 + (c[i][1]-b[1])**2
         d[i][1] = i
@@ -95,6 +96,70 @@ def nearest_neighbors(b, c, k):
 
     return n
 
+def flock_diameter(c):
+    '''
+    Return the diameter of a flock (community) c of birds
+    where flock diameter is the distance between the
+    center of the flock and the bird furthest from the
+    center (multiplied by 2) (using euclidean distance)
+
+    Assumptions
+    -----------
+    - 2D locations
+    - c is non-zero (there are more then 0 zeros in c)
+
+    Input
+    -----
+    c: the flock (community) of birds
+
+    Output
+    ------
+    d: the diameter of the flock c of birds
+    '''
+    center = flock_center(c)
+    d = np.zeros(len(c))
+    
+    for i in range(len(c)):
+        d[i] = (c[i][0]-center[0][0])**2 + (c[i][1]-center[0][1])**2
+
+    d.sort(axis=0)
+    # after sorting the squared euclidean distance
+
+    return 2.*(d[N-1]**(.5))
+
+
+def flock_center(c):
+    '''
+    Give the x,y location of the center of the flock
+    (community) c of birds
+
+    Assumptions
+    -----------
+    - 2D locations (x and y)
+    - c is an size N x 2 matrix of birds where the x
+       locations of the birds are held in column 1
+       and the y locations are held in column 2
+    
+    Input
+    -----
+    c: the flock (community) of birds
+
+    Output
+    ------
+    (ndarray)
+    - center: the center location of the flockk
+    '''
+
+    center = np.zeros((1,2))
+    # N: the number of birds
+    N = y.shape[0]
+    for i in range(N):
+        center[0][0] += y[i][0]
+        center[0][1] += y[i][1]
+
+    center /= N
+    return center    
+
 
 def RHS(y, t, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta):
     '''
@@ -111,7 +176,7 @@ def RHS(y, t, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta):
 
     '''
     N = y.shape[0]
-    f = zeros_like(y)
+    f = np.zeros_like(y)
 
     # leader bird calculation
     f[0] = gamma_1*(C(t,food_flag) - y[0])
@@ -122,13 +187,7 @@ def RHS(y, t, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta):
     f[1:] = gamma_2*(y[0] - y[1:])
 
     # centering force
-    center = zeros((1,2))
-    for i in range(len(y)):
-        center[0][0] += y[i][0]
-        center[0][1] += y[i][1]
-        
-    center = center/N
-    f[1:] += kappa*(center - y[1:])
+    f[1:] += kappa*(flock_center(y) - y[1:])
 
     # repelling force
     for k in range(1,N):
@@ -144,11 +203,19 @@ def RHS(y, t, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta):
 ##
 # Set up problem domain
 t0 = 0.0        # start time
-T = 10.0        # end time
+T = 50.0        # end time
 nsteps = 500    # number of time steps
 
+np.random.seed(2018)
+
 # Task:  Experiment with N, number of birds
-N = 100
+N = 10
+if (len(sys.argv) == 2):
+    N = int(sys.argv[1])
+else:
+    sys.stderr.write("strange command-line args\n")
+    sys.stderr.write("expected args: <# of birds>\n")
+    sys.exit()
 
 # Task:  Experiment with the problem parameters, and understand what they do
 dt = (T - t0) / (nsteps-1.0)
@@ -156,52 +223,56 @@ gamma_1 = 2.0
 gamma_2 = 8.0
 alpha = 0.4
 kappa = 4.0
-rho = 22.0
-delta = 5.0
-food_flag = 1   # food_flag == 0: C(x,y) = (0.0, 0.0)
-                # food_flag == 1: C(x,y) = (sin(alpha*t), cos(alpha*t))
+rho = 2.0
+delta = 0.5
+food_flag = 0
+    # food_flag == 0: C(x,y) = (0.0, 0.0)
+    # food_flag == 1: C(x,y) = (sin(alpha*t), cos(alpha*t))
 neighbors = 5
 # Intialize problem
-y = rand(N,2)
-flock_diam = zeros((nsteps,))
+
+y = np.random.rand(N,2)
+flock_diam = np.zeros((nsteps,))
 
 # Initialize the Movie Writer
-FFMpegWriter = manimation.writers['ffmpeg']
-writer = FFMpegWriter(fps=12)
-fig = pyplot.figure(0)
-pp, = pyplot.plot([],[], 'k+') 
-rr, = pyplot.plot([],[], 'r+')
-ff, = pyplot.plot([],[], 'c+')
-pyplot.xlabel(r'$X$', fontsize='large')
-pyplot.ylabel(r'$Y$', fontsize='large')
-pyplot.xlim(-3,3)       # may need to adjust if birds fly outside box
-pyplot.ylim(-3,3)       # may need to adjust if birds fly outside box
+#FFMpegWriter = manimation.writers['ffmpeg']
+#writer = FFMpegWriter(fps=12)
+#fig = pyplot.figure(0)
+#pp, = pyplot.plot([],[], 'k+') 
+#rr, = pyplot.plot([],[], 'r+')
+#ff, = pyplot.plot([],[], 'c+')
+#pyplot.xlabel(r'$X$', fontsize='large')
+#pyplot.ylabel(r'$Y$', fontsize='large')
+#pyplot.xlim(-3,3)       # may need to adjust if birds fly outside box
+#pyplot.ylim(-3,3)       # may need to adjust if birds fly outside box
 
 
 # Begin writing movie frames
-with writer.saving(fig, "movie.mp4",dpi=648):
+#with writer.saving(fig, "movie.mp4",dpi=648):
 
     # First frame
-    pp.set_data(y[1:,0], y[1:,1]) 
-    rr.set_data(y[0,0], y[0,1])
-    ff.set_data([C(t0,food_flag)[0]],[C(t0,food_flag)[1]])
-    writer.grab_frame()
+#pp.set_data(y[1:,0], y[1:,1]) 
+#rr.set_data(y[0,0], y[0,1])
+#ff.set_data([C(t0,food_flag)[0]],[C(t0,food_flag)[1]])
+#writer.grab_frame()
 
-    t = t0
-    for step in range(nsteps):
+t = t0
+for step in range(nsteps):
         
-        # Task: Fill these two lines in
-        y = RK4(RHS, y, t, dt, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta)
-#        flock_diam[step] = ... 
-        t += dt
+    # Task: Fill these two lines in
+    flock_diam[step] = flock_diameter(y)
+    y = RK4(RHS, y, t, dt, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta)
+    print(y[0])
+    t += dt
         
-        # Movie frame
-        pp.set_data(y[:,0], y[:,1]) 
-        rr.set_data(y[0,0], y[0,1])
-        ff.set_data([C(t,food_flag)[0]],[C(t,food_flag)[1]])
-        writer.grab_frame()
-        
+    # Movie frame
+#   pp.set_data(y[:,0], y[:,1]) 
+#   rr.set_data(y[0,0], y[0,1])
+#   ff.set_data([C(t,food_flag)[0]],[C(t,food_flag)[1]])
+#   writer.grab_frame()
+       
 
 # Task: Plot flock diameter
 #plot(..., flock_diam, ...)
 
+savetxt('flock_diam'+str(N)+'.txt',flock_diam)
