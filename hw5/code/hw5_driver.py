@@ -5,6 +5,30 @@ import numpy as np
 import matplotlib.animation as manimation
 import os, sys, random
 
+# HW5 solution by Aaron and Fred
+
+# Usage:
+# Expected command line param format
+# python hw5_driver.py <number of birds> : [10, 30, 100]
+#                      <alpha>           : [0.2, 0.4, 0.8, 1.6, 3.2]
+#                      <gamma_1>         : [1, 2, 4, 8, 16]
+#                      <gamma_2>         : [4, 8, 16, 32, 64]
+#                      <kappa>           : [2, 4, 8, 16, 32]
+#                      <rho>             : [1, 2, 4, 8, 16]
+#                      <delta>           : [0.25, 0.5, 1.0, 2.0, 4.0]
+#                      <food_flag>       : [0, 1]
+#
+# Proper usage is assumed (i.e. there are no safeguards in place for running
+# non-listed param sets, this is more to facilitate compatibility with the
+# flock diameter plotting file)
+#
+# Parameters are processed in order, meaning your second argv entry (sys.argv[2])
+# is expected to be alpha
+#
+# Additional params (after food_flag) are ignored
+
+
+
 def RK4(f, y, t, dt, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta):
     '''
     Carry out a step of RK4 from time t using dt
@@ -118,14 +142,13 @@ def flock_diameter(c):
     '''
     center = flock_center(c)
     d = np.zeros(len(c))
+    radius = 0.0
     
     for i in range(len(c)):
-        d[i] = (c[i][0]-center[0][0])**2 + (c[i][1]-center[0][1])**2
+        current_radius = (c[i][0]-center[0][0])**2 + (c[i][1]-center[0][1])**2
+        current_radius = max(radius, current_radius)
 
-    d.sort(axis=0)
-    # after sorting the squared euclidean distance
-
-    return 2.*(d[N-1]**(.5))
+    return 2.*np.sqrt(current_radius)
 
 
 def flock_center(c):
@@ -203,35 +226,56 @@ def RHS(y, t, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta):
 ##
 # Set up problem domain
 t0 = 0.0        # start time
-T = 50.0        # end time
-nsteps = 500    # number of time steps
+T = 10.0        # end time
+nsteps = 50    # number of time steps
 
 np.random.seed(2018)
 
-# Task:  Experiment with N, number of birds
-N = 10
-if (len(sys.argv) == 2):
-    N = int(sys.argv[1])
-else:
-    sys.stderr.write("strange command-line args\n")
-    sys.stderr.write("expected args: <# of birds>\n")
-    sys.exit()
-
 # Task:  Experiment with the problem parameters, and understand what they do
+# Task:  Experiment with N, number of birds
+birds = 30
+
 dt = (T - t0) / (nsteps-1.0)
+alpha = 0.4
 gamma_1 = 2.0
 gamma_2 = 8.0
-alpha = 0.4
 kappa = 4.0
 rho = 2.0
 delta = 0.5
-food_flag = 0
-    # food_flag == 0: C(x,y) = (0.0, 0.0)
-    # food_flag == 1: C(x,y) = (sin(alpha*t), cos(alpha*t))
+food_flag = 1
+# food_flag == 0: C(x,y) = (0.0, 0.0)
+# food_flag == 1: C(x,y) = (sin(alpha*t), cos(alpha*t))
 neighbors = 5
+# number of nearest neighbors to consider for repulsive force
+# calculations
+
+# Apply Command Line Params
+# Assume the user isn't a jerk trying to break the parser
+p = sys.argv
+
+for i in range(1,len(p)):
+    param = p[i]
+    if i == 1:             # birds
+        birds = int(param)
+    if i == 2:             # alpha
+        alpha = float(param)
+    if i == 3:             # gamma_1
+        gamma_1 = float(param)
+    if i == 4:             # gamma_2
+        gamma_2 = float(param)
+    if i == 5:             # kappa
+        kappa = float(param)
+    if i == 6:             # rho
+        rho = float(param)
+    if i == 7:             # delta
+        delta = float(param)
+    if i == 8:             # food_flag
+        food_flag = int(param)
+
+
 # Intialize problem
 
-y = np.random.rand(N,2)
+y = np.random.rand(birds,2)
 flock_diam = np.zeros((nsteps,))
 
 # Initialize the Movie Writer
@@ -262,7 +306,6 @@ for step in range(nsteps):
     # Task: Fill these two lines in
     flock_diam[step] = flock_diameter(y)
     y = RK4(RHS, y, t, dt, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta)
-    print(y[0])
     t += dt
         
     # Movie frame
@@ -275,4 +318,5 @@ for step in range(nsteps):
 # Task: Plot flock diameter
 #plot(..., flock_diam, ...)
 
-savetxt('flock_diam'+str(N)+'.txt',flock_diam)
+savetxt('flock_diam_'+str(birds)+'_'+str(alpha)+'_'+str(gamma_1)+'_'+str(gamma_2)+'_'\
+            +str(kappa)+'_'+str(rho)+'_'+str(delta)+'_'+str(food_flag)+'.txt',flock_diam)
