@@ -1,4 +1,5 @@
 from scipy import *
+from scipy import stats
 from matplotlib import pyplot
 from operator import itemgetter
 import numpy as np
@@ -119,6 +120,64 @@ def nearest_neighbors(b, c, k):
         n[i][1] = c[index][1]
 
     return n
+
+
+def flock_diameter_linregress(c):
+    '''
+    Return the linregress version of flock diameter
+    evaluation, where diameter here is defined as the
+    euclidean distance between two points (A and B) along
+    its linear regression line
+
+    Input
+    -----
+    c: the community (flock) of birds
+
+    Output
+    _____
+    (distance, ndarray([A_x, A_y],
+                       [B_x, B_y])
+
+    - a tuple containing:
+    -   - the distance calculation between
+    -     the two points on the linear regression line
+    -   - a NumPy array containing the x and y values
+    -   - of each point
+    '''
+    # extremum points to return
+    extremum_pts = np.zeros((2,2))
+    
+    c_x = c[:,0]
+    c_y = c[:,1]
+
+    # using a helpful scipy library function
+    slope, intercept, r, p, std_err = stats.linregress(c_x,c_y)
+
+    max_dx = max(c_x) - min(c_x)
+    max_dy = max(c_y) - min(c_y)
+    
+    dist = np.sqrt(max_dx**2.0 + max_dy**2.0)
+
+    x1 = 0.0
+    x2 = 0.0
+
+    if max_dx >= max_dy:
+        x1 = min(c_x)
+        x2 = max(c_x)
+    else:
+        x1 = [c_x[i] for i in range(len(c_x)) if c_y[i] == min(c_y)]
+        x2 = [c_x[i] for i in range(len(c_x)) if c_y[i] == max(c_y)]
+
+    # linear regression line:
+    # f(x) = slope * x_value + intercept
+    y1 = slope*x1 + intercept
+    y2 = slope*x2 + intercept
+
+    extremum_pts[0] = [x1, y1]
+    extremum_pts[1] = [x2, y2]
+
+    return (dist, extremum_pts)
+
 
 def flock_diameter(c):
     '''
@@ -304,7 +363,7 @@ t = t0
 for step in range(nsteps):
         
     # Task: Fill these two lines in
-    flock_diam[step] = flock_diameter(y)
+    flock_diam[step] = flock_diameter_linregress(y)
     y = RK4(RHS, y, t, dt, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta)
     t += dt
         
