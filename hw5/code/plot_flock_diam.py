@@ -65,11 +65,10 @@ begin_slice, end_slice = offset_dict[pp]
 for p in param_list:
     prefix = default_filename[:begin_slice]
     suffix = default_filename[end_slice:]
-    print(prefix)
-    print(suffix)
     print(prefix+str(p)+suffix)
     data.append(loadtxt(prefix + str(p) + suffix))
 
+# getting ready to plot stuff
 begin_time = 0.0
 end_time = 10.0
 dt = end_time - begin_time
@@ -79,7 +78,14 @@ ns = arange(len(data[0]))
 N = [dt * float(n)/len(ns) for n in ns]
 
 f, fplot = plt.subplots()
+diam_avg = np.zeros(len(data))
+
 for i, d in enumerate(data):
+
+
+    avg = sum(d)/float(len(d))
+    diam_avg[i] = avg
+
     if pp == 'gamma_2':
         fplot.plot(N, d, label = symbol_dict[pp]+' = '+str(param_list[i]),
                    linewidth = 2.0)
@@ -97,4 +103,12 @@ plt.ylabel('$D$',
            fontsize = 16)
 plt.legend(loc=2)
 
-plt.savefig('flock_diams_'+str(pp)+'.png',dpi=600,bbox_inches = None, pad_inches = 0.1)
+# saving the plot
+plt.savefig('flock_diams_'+str(pp)+'.png',\
+                dpi=600,bbox_inches = None, pad_inches = 0.1)
+
+# saving the time average flock diameter data in
+# nice LaTeX formatting
+np.savetxt('avg_flock_data_'+str(pp)+'.tex',\
+               diam_avg,fmt = '%.5e',delimiter = '  &  ',\
+           newline = ' \\\\\n',)
