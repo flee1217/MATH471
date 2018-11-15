@@ -339,7 +339,7 @@ run_option = 0
 # run_option == 3: smelly + predator
 
 # EXTRA CREDIT
-sigma = 8.0 # smelly bird repulsion force scaling term
+sigma = 5.0 # smelly bird repulsion force scaling term
 pi_   = 2.0 # predator repulsion force scaling term
 
 # Apply Command Line Params
