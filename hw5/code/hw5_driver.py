@@ -10,7 +10,8 @@ import os, sys, random
 
 # Usage:
 # Expected command line param format
-# python hw5_driver.py <number of birds> : [10, 30, 100]
+# python hw5_driver.py <run_option>      : [0, 1, 2, 3]
+#                      <number of birds> : [10, 30, 100]
 #                      <alpha>           : [0.2, 0.4, 0.8, 1.6, 3.2]
 #                      <gamma_1>         : [0.5, 1, 2, 4, 8]
 #                      <gamma_2>         : [4, 8, 16, 32, 64]
@@ -23,14 +24,15 @@ import os, sys, random
 # non-listed param sets, this is more to facilitate compatibility with the
 # flock diameter plotting file)
 #
-# Parameters are processed in order, meaning your second argv entry (sys.argv[2])
-# is expected to be alpha
+# Parameters are processed in order, meaning the second argv entry (sys.argv[2])
+# is expected to be number of birds
 #
 # Additional params (after food_flag) are ignored
 
 
 
-def RK4(f, y, t, dt, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta, sigma, pi_):
+def RK4(f, y, t, dt, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta,\
+        sigma, pi_, run_option):
     '''
     Carry out a step of RK4 from time t using dt
     
@@ -49,6 +51,8 @@ def RK4(f, y, t, dt, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta, sigm
     rho:        Parameter from homework PDF
     delta:      Parameter from homework PDF
     sigma:      Smelly bird repulsive force scalar factor
+    pi_:        Predator avoidance force factor
+    run_option: flag dictating which forces to apply for extra credit
     
 
     Output
@@ -57,10 +61,14 @@ def RK4(f, y, t, dt, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta, sigm
     '''
     
     # Task: Fill in the RK4 formula
-    k1 = dt*f(y,t, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta, sigma, pi_)
-    k2 = dt*f(y+k1/2.,t+dt/2., food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta, sigma, pi_)
-    k3 = dt*f(y+k2/2.,t+dt/2., food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta, sigma, pi_)
-    k4 = dt*f(y+k3,t+dt, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta, sigma, pi_)
+    k1 = dt*f(y,t, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta,\
+              sigma, pi_, run_option)
+    k2 = dt*f(y+k1/2.,t+dt/2., food_flag, alpha, gamma_1, gamma_2, kappa,\
+              rho, delta, sigma, pi_, run_option)
+    k3 = dt*f(y+k2/2.,t+dt/2., food_flag, alpha, gamma_1, gamma_2, kappa,\
+              rho, delta, sigma, pi_, run_option)
+    k4 = dt*f(y+k3,t+dt, food_flag, alpha, gamma_1, gamma_2, kappa, rho,\
+              delta, sigma, pi_, run_option)
 
     y = y + (1./6.)*(k1 + 2*k2 + 2*k3 + k4)
 
@@ -250,7 +258,8 @@ def flock_center(c):
     return center    
 
 
-def RHS(y, t, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta, sigma, pi_):
+def RHS(y, t, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta,\
+        sigma, pi_, run_option):
     '''
     Define the right hand side of the ODE
 
@@ -288,20 +297,20 @@ def RHS(y, t, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta, sigma, pi_)
 
 
     # smelly bird repulsive force
-    
-    f[2:] += sigma*(y[2:] - y[1])/((y[2:] - y[1])**2 + delta)
+    if run_option == 1 or run_option == 3:
+        f[2:] += sigma*(y[2:] - y[1])/((y[2:] - y[1])**2 + delta)
     
     # predator avoidance force
-
-    f[:] += pi_*(y[:] - P(t))/((y[:] - P(t))**2 + delta)
+    if run_option == 2 or run_option == 3:
+        f[:] += pi_*(y[:] - P(t))/((y[:] - P(t))**2 + delta)
     return f
 
 
 ##
 # Set up problem domain
-t0 = 0.0        # start time
-T = 10.0        # end time
-nsteps = 100     # number of time steps
+t0     = 0.0   # start time
+T      = 30.0  # end time
+nsteps = 150   # number of time steps
 
 np.random.seed(2018)
 
@@ -323,8 +332,14 @@ neighbors = 5
 # number of nearest neighbors to consider for repulsive force
 # calculations
 
+run_option = 0
+# run_option == 0: regular sim
+# run_option == 1: smelly bird
+# run_option == 2: predator
+# run_option == 3: smelly + predator
+
 # EXTRA CREDIT
-sigma = 2.0 # smelly bird repulsion force scaling term
+sigma = 8.0 # smelly bird repulsion force scaling term
 pi_   = 2.0 # predator repulsion force scaling term
 
 # Apply Command Line Params
@@ -333,21 +348,23 @@ p = sys.argv
 
 for i in range(1,len(p)):
     param = p[i]
-    if i == 1:             # birds
+    if i == 1:             # run_option
+        run_option = int(param)
+    if i == 2:             # birds
         birds = int(param)
-    if i == 2:             # alpha
+    if i == 3:             # alpha
         alpha = float(param)
-    if i == 3:             # gamma_1
+    if i == 4:             # gamma_1
         gamma_1 = float(param)
-    if i == 4:             # gamma_2
+    if i == 5:             # gamma_2
         gamma_2 = float(param)
-    if i == 5:             # kappa
+    if i == 6:             # kappa
         kappa = float(param)
-    if i == 6:             # rho
+    if i == 7:             # rho
         rho = float(param)
-    if i == 7:             # delta
+    if i == 8:             # delta
         delta = float(param)
-    if i == 8:             # food_flag
+    if i == 9:             # food_flag
         food_flag = int(param)
 
 
@@ -360,6 +377,7 @@ flock_diam = np.zeros((nsteps,))
 FFMpegWriter = manimation.writers['ffmpeg']
 writer = FFMpegWriter(fps=12)
 fig = pyplot.figure(0)
+ax = pyplot.subplot(111)
 
 
 # flock plotting data
@@ -368,15 +386,21 @@ fig = pyplot.figure(0)
 # ff: food
 # ss: smelly bird
 # pp: predator
-cc, = pyplot.plot([],[], 'k.') 
-ll, = pyplot.plot([],[], 'ro')
-ff, = pyplot.plot([],[], 'y*')
-ss, = pyplot.plot([],[], 'bP')
-pp, = pyplot.plot([],[], 'mX')
+cc, = pyplot.plot([],[], 'k.', label = '$Flock$')
+ll, = pyplot.plot([],[], 'ro', label = '$Leader$')
+ff, = pyplot.plot([],[], 'y*', label = '$Food$')
+ss, = pyplot.plot([],[], 'bP', label = '$Smelly$')
+pp, = pyplot.plot([],[], 'mX', label = '$Predator$')
 pyplot.xlabel(r'$X$', fontsize='large')
 pyplot.ylabel(r'$Y$', fontsize='large')
 pyplot.xlim(-3,3)       # may need to adjust if birds fly outside box
 pyplot.ylim(-3,3)       # may need to adjust if birds fly outside box
+
+# legend formatting
+box = ax.get_position()
+ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+                 
+ax.legend(loc='center left', bbox_to_anchor = (1, 0.5))
 
 
 # Begin writing movie frames
@@ -388,8 +412,10 @@ with writer.saving(fig, "movie.mp4",dpi=648):
     cc.set_data(y[2:,0], y[2:,1]) 
     ll.set_data(y[0,0], y[0,1])
     ff.set_data(c_x,c_y)
-    ss.set_data(y[1,0], y[1,1])
-    pp.set_data(p_x,p_y)
+    if (run_option == 1 or run_option == 3):
+        ss.set_data(y[1,0], y[1,1])
+    if (run_option == 2 or run_option == 3):
+        pp.set_data(p_x,p_y)
     writer.grab_frame()
 
     t = t0
@@ -402,7 +428,8 @@ with writer.saving(fig, "movie.mp4",dpi=648):
         
         # Task: Fill these two lines in
         flock_diam[step] = flock_diameter(y)
-        y = RK4(RHS, y, t, dt, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta, sigma, pi_)
+        y = RK4(RHS, y, t, dt, food_flag, alpha, gamma_1, gamma_2, kappa, rho,\
+                delta, sigma, pi_, run_option)
         t += dt
         p_x,p_y = P(t)
         c_x,c_y = C(t,food_flag)
@@ -411,13 +438,13 @@ with writer.saving(fig, "movie.mp4",dpi=648):
         cc.set_data(y[2:,0], y[2:,1]) 
         ll.set_data(y[0,0], y[0,1])
         ff.set_data(c_x,c_y)
-        ss.set_data(y[1,0], y[1,1])
-        pp.set_data(p_x,p_y)
+        if (run_option == 1 or run_option == 3):
+            ss.set_data(y[1,0], y[1,1])
+        if (run_option == 2 or run_option == 3):
+            pp.set_data(p_x,p_y)
         writer.grab_frame()
         
        
-# Task: Plot flock diameter
-#plot(..., flock_diam, ...)
-
-savetxt('flock_diam_'+str(birds)+'_'+str(alpha)+'_'+str(gamma_1)+'_'+str(gamma_2)+'_'\
-            +str(kappa)+'_'+str(rho)+'_'+str(delta)+'_'+str(food_flag)+'.txt',flock_diam)
+savetxt('flock_diam_'+str(birds)+'_'+str(alpha)+'_'+str(gamma_1)+'_'+\
+        str(gamma_2)+'_'+str(kappa)+'_'+str(rho)+'_'+str(delta)+'_'+\
+        str(food_flag)+'.txt',flock_diam)
