@@ -10,7 +10,8 @@ import sys
 ###
 
 param_dict = { 'birds': 0.0, 'alpha': 0.1, 'gamma_1': 0.5, 'gamma_2': 0.5, \
-               'kappa': 0.25, 'rho': 0.5, 'delta': 0.125, 'food_flag' : -1.0}
+               'kappa': 0.25, 'rho': 0.5, 'delta': 0.125, 'food_flag' : -1.0,\
+               'sigma': 1.0, 'pi': 1.0 }
 
 offset_dict = { 'birds'    : (11,13),
                 'alpha'    : (14,17),
@@ -19,7 +20,9 @@ offset_dict = { 'birds'    : (11,13),
                 'kappa'    : (26,29),
                 'rho'      : (30,33),
                 'delta'    : (34,37),
-                'food_flag': (38,39)}
+                'food_flag': (38,39),
+                'sigma'    : (40,43),
+                'pi'       : (44,47) }
 
 symbol_dict = { 'birds'     : '$Birds$',
                 'alpha'     : '$\\alpha$',
@@ -28,9 +31,11 @@ symbol_dict = { 'birds'     : '$Birds$',
                 'kappa'     : '$\\kappa$',
                 'rho'       : '$\\rho$',
                 'delta'     : '$\\delta$',
-                'food_flag' : '$Food$ $Flag$'}
+                'food_flag' : '$Food$ $Flag$',
+                'sigma'     : '$\\sigma$',
+                'pi'        : '$\\pi$' }
 
-default_filename = 'flock_diam_30_0.4_2.0_8.0_4.0_2.0_0.5_1.txt'
+default_filename = 'flock_diam_30_0.4_2.0_8.0_4.0_2.0_0.5_1_8.0_4.0.txt'
 
 if len(sys.argv) != 2:
     sys.stderr.write('no valid param specified\n')
@@ -51,6 +56,7 @@ except KeyError:
 data = []
 param_list = []
 param_iter_range = 5
+               
 if param_base == 0.0:
     param_list = [10, 30, 100]
 elif param_base == -1.0:
