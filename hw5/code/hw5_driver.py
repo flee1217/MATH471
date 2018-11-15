@@ -20,8 +20,10 @@ import os, sys, random
 #                      <rho>             : [1, 2, 4, 8, 16]
 #                      <delta>           : [0.25, 0.5, 1.0, 2.0, 4.0]
 #                      <food_flag>       : [0, 1]
+#                      <sigma>           : [1.0, 2.0, 4.0, 8.0, 16.0]
+#                      <pi_>             : [1.0, 2.0, 4.0, 8.0, 16.0]
 #
-# default params: 0 0 30 0.2 2.0 8.0 4.0 2.0 0.5 1
+# default params: 0 0 30 0.2 2.0 8.0 4.0 2.0 0.5 1 8.0 4.0
 #
 # Proper usage is assumed (i.e. there are no safeguards in place for running
 # non-listed param sets, this is more to facilitate compatibility with the
@@ -355,26 +357,30 @@ p = sys.argv
 
 for i in range(1,len(p)):
     param = p[i]
-    if i == 1:             # movie_option
+    if i == 1:                    # movie_option
         movie_option = int(param)
-    if i == 2:             # run_option
+    if i == 2:                    # run_option
         run_option = int(param)
-    if i == 3:             # birds
+    if i == 3:                    # birds
         birds = int(param)
-    if i == 4:             # alpha
+    if i == 4:                    # alpha
         alpha = float(param)
-    if i == 5:             # gamma_1
+    if i == 5:                    # gamma_1
         gamma_1 = float(param)
-    if i == 6:             # gamma_2
+    if i == 6:                    # gamma_2
         gamma_2 = float(param)
-    if i == 7:             # kappa
+    if i == 7:                    # kappa
         kappa = float(param)
-    if i == 8:             # rho
+    if i == 8:                    # rho
         rho = float(param)
-    if i == 9:             # delta
+    if i == 9:                    # delta
         delta = float(param)
-    if i == 10:             # food_flag
+    if i == 10:                   # food_flag
         food_flag = int(param)
+    if i == 11:                   # sigma
+        sigma = float(param)
+    if i == 12:                   # pi
+        pi_ = float(param)
 
 
 # Intialize problem
@@ -472,4 +478,4 @@ else:
        
 savetxt('flock_diam_'+str(birds)+'_'+str(alpha)+'_'+str(gamma_1)+'_'+\
         str(gamma_2)+'_'+str(kappa)+'_'+str(rho)+'_'+str(delta)+'_'+\
-        str(food_flag)+'.txt',flock_diam)
+        str(food_flag)+'_'+str(sigma)+'_'+str(pi_)+'.txt',flock_diam)
