@@ -346,7 +346,7 @@ run_option = 0
 #            == 3: smelly + predator
 
 # EXTRA CREDIT
-sigma = 4.0 # smelly bird repulsion force scaling term
+sigma = 8.0 # smelly bird repulsion force scaling term
 pi_   = 4.0 # predator repulsion force scaling term
 
 # Apply Command Line Params
@@ -409,7 +409,7 @@ if (movie_option == 1):
     pyplot.xlim(-3,3)       # may need to adjust if birds fly outside box
     pyplot.ylim(-3,3)       # may need to adjust if birds fly outside box
     
-# legend formatting
+    # legend formatting
     box = ax.get_position()
     ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
                  
