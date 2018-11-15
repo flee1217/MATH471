@@ -10,7 +10,8 @@ import os, sys, random
 
 # Usage:
 # Expected command line param format
-# python hw5_driver.py <run_option>      : [0, 1, 2, 3]
+# python hw5_driver.py <movie_option>    : [0, 1]
+#                      <run_option>      : [0, 1, 2, 3]
 #                      <number of birds> : [10, 30, 100]
 #                      <alpha>           : [0.2, 0.4, 0.8, 1.6, 3.2]
 #                      <gamma_1>         : [0.5, 1, 2, 4, 8]
@@ -19,6 +20,8 @@ import os, sys, random
 #                      <rho>             : [1, 2, 4, 8, 16]
 #                      <delta>           : [0.25, 0.5, 1.0, 2.0, 4.0]
 #                      <food_flag>       : [0, 1]
+#
+# default params: 0 0 30 0.2 2.0 8.0 4.0 2.0 0.5 1
 #
 # Proper usage is assumed (i.e. there are no safeguards in place for running
 # non-listed param sets, this is more to facilitate compatibility with the
@@ -309,8 +312,8 @@ def RHS(y, t, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta,\
 ##
 # Set up problem domain
 t0     = 0.0   # start time
-T      = 30.0  # end time
-nsteps = 150   # number of time steps
+T      = 10.0  # end time
+nsteps = 50    # number of time steps
 
 np.random.seed(2018)
 
@@ -332,15 +335,19 @@ neighbors = 5
 # number of nearest neighbors to consider for repulsive force
 # calculations
 
+movie_option = 0
+# movie option == 0: no movie
+#              == 1: here's a movie
+
 run_option = 0
 # run_option == 0: regular sim
-# run_option == 1: smelly bird
-# run_option == 2: predator
-# run_option == 3: smelly + predator
+#            == 1: smelly bird
+#            == 2: predator
+#            == 3: smelly + predator
 
 # EXTRA CREDIT
-sigma = 5.0 # smelly bird repulsion force scaling term
-pi_   = 2.0 # predator repulsion force scaling term
+sigma = 4.0 # smelly bird repulsion force scaling term
+pi_   = 4.0 # predator repulsion force scaling term
 
 # Apply Command Line Params
 # Assume the user isn't a jerk trying to break the parser
@@ -348,23 +355,25 @@ p = sys.argv
 
 for i in range(1,len(p)):
     param = p[i]
-    if i == 1:             # run_option
+    if i == 1:             # movie_option
+        movie_option = int(param)
+    if i == 2:             # run_option
         run_option = int(param)
-    if i == 2:             # birds
+    if i == 3:             # birds
         birds = int(param)
-    if i == 3:             # alpha
+    if i == 4:             # alpha
         alpha = float(param)
-    if i == 4:             # gamma_1
+    if i == 5:             # gamma_1
         gamma_1 = float(param)
-    if i == 5:             # gamma_2
+    if i == 6:             # gamma_2
         gamma_2 = float(param)
-    if i == 6:             # kappa
+    if i == 7:             # kappa
         kappa = float(param)
-    if i == 7:             # rho
+    if i == 8:             # rho
         rho = float(param)
-    if i == 8:             # delta
+    if i == 9:             # delta
         delta = float(param)
-    if i == 9:             # food_flag
+    if i == 10:             # food_flag
         food_flag = int(param)
 
 
@@ -374,67 +383,43 @@ y = np.random.rand(birds,2)
 flock_diam = np.zeros((nsteps,))
 
 # Initialize the Movie Writer
-FFMpegWriter = manimation.writers['ffmpeg']
-writer = FFMpegWriter(fps=12)
-fig = pyplot.figure(0)
-ax = pyplot.subplot(111)
 
 
-# flock plotting data
-# cc: flock w/o leader
-# ll: leader bird
-# ff: food
-# ss: smelly bird
-# pp: predator
-cc, = pyplot.plot([],[], 'k.', label = '$Flock$')
-ll, = pyplot.plot([],[], 'ro', label = '$Leader$')
-ff, = pyplot.plot([],[], 'y*', label = '$Food$')
-ss, = pyplot.plot([],[], 'bP', label = '$Smelly$')
-pp, = pyplot.plot([],[], 'mX', label = '$Predator$')
-pyplot.xlabel(r'$X$', fontsize='large')
-pyplot.ylabel(r'$Y$', fontsize='large')
-pyplot.xlim(-3,3)       # may need to adjust if birds fly outside box
-pyplot.ylim(-3,3)       # may need to adjust if birds fly outside box
+# Begin writing movie frames (if a render is wanted)
+if (movie_option == 1):
+    FFMpegWriter = manimation.writers['ffmpeg']
+    writer = FFMpegWriter(fps=12)
+    fig = pyplot.figure(0)
+    ax = pyplot.subplot(111)
 
+
+    # flock plotting data
+    # cc: flock w/o leader
+    # ll: leader bird
+    # ff: food
+    # ss: smelly bird
+    # pp: predator
+    cc, = pyplot.plot([],[], 'k.', label = '$Flock$')
+    ll, = pyplot.plot([],[], 'ro', label = '$Leader$')
+    ff, = pyplot.plot([],[], 'y*', label = '$Food$')
+    ss, = pyplot.plot([],[], 'bP', label = '$Smelly$')
+    pp, = pyplot.plot([],[], 'mX', label = '$Predator$')
+    pyplot.xlabel(r'$X$', fontsize='large')
+    pyplot.ylabel(r'$Y$', fontsize='large')
+    pyplot.xlim(-3,3)       # may need to adjust if birds fly outside box
+    pyplot.ylim(-3,3)       # may need to adjust if birds fly outside box
+    
 # legend formatting
-box = ax.get_position()
-ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
                  
-ax.legend(loc='center left', bbox_to_anchor = (1, 0.5))
+    ax.legend(loc='center left', bbox_to_anchor = (1, 0.5))
 
-
-# Begin writing movie frames
-with writer.saving(fig, "movie.mp4",dpi=648):
+    with writer.saving(fig, "movie.mp4",dpi=648):
 
     # First frame
-    p_x,p_y = P(t0)
-    c_x,c_y = C(t0,food_flag)
-    cc.set_data(y[2:,0], y[2:,1]) 
-    ll.set_data(y[0,0], y[0,1])
-    ff.set_data(c_x,c_y)
-    if (run_option == 1 or run_option == 3):
-        ss.set_data(y[1,0], y[1,1])
-    if (run_option == 2 or run_option == 3):
-        pp.set_data(p_x,p_y)
-    writer.grab_frame()
-
-    t = t0
-    i = 1
-    for step in range(nsteps):
-        if i % 10 == 0:
-            print('frame: '+str(i)+'/'+str(nsteps))
-
-        i += 1
-        
-        # Task: Fill these two lines in
-        flock_diam[step] = flock_diameter(y)
-        y = RK4(RHS, y, t, dt, food_flag, alpha, gamma_1, gamma_2, kappa, rho,\
-                delta, sigma, pi_, run_option)
-        t += dt
-        p_x,p_y = P(t)
-        c_x,c_y = C(t,food_flag)
-        
-        # Movie frame
+        p_x,p_y = P(t0)
+        c_x,c_y = C(t0,food_flag)
         cc.set_data(y[2:,0], y[2:,1]) 
         ll.set_data(y[0,0], y[0,1])
         ff.set_data(c_x,c_y)
@@ -443,6 +428,46 @@ with writer.saving(fig, "movie.mp4",dpi=648):
         if (run_option == 2 or run_option == 3):
             pp.set_data(p_x,p_y)
         writer.grab_frame()
+
+        t = t0
+        i = 1
+        for step in range(nsteps):
+            if i % 10 == 0:
+                print('frame: '+str(i)+'/'+str(nsteps))
+
+            i += 1
+        
+            # Task: Fill these two lines in
+            flock_diam[step] = flock_diameter(y)
+            y = RK4(RHS, y, t, dt, food_flag, alpha, gamma_1, gamma_2, kappa, rho,\
+                        delta, sigma, pi_, run_option)
+            t += dt
+            p_x,p_y = P(t)
+            c_x,c_y = C(t,food_flag)
+        
+            # Movie frame
+            cc.set_data(y[2:,0], y[2:,1]) 
+            ll.set_data(y[0,0], y[0,1])
+            ff.set_data(c_x,c_y)
+            if (run_option == 1 or run_option == 3):
+                ss.set_data(y[1,0], y[1,1])
+            if (run_option == 2 or run_option == 3):
+                pp.set_data(p_x,p_y)
+            writer.grab_frame()
+# no movie? only time stepping happens
+else:
+    t = t0
+    i = 1
+    for step in range(nsteps):
+        if i % 10 == 0:
+            print('frame: '+str(i)+'/'+str(nsteps))
+        i += 1
+        
+        flock_diam[step] = flock_diameter(y)
+        y = RK4(RHS, y, t, dt, food_flag, alpha, gamma_1, gamma_2, kappa, rho,\
+                    delta, sigma, pi_, run_option)
+        t += dt
+        
         
        
 savetxt('flock_diam_'+str(birds)+'_'+str(alpha)+'_'+str(gamma_1)+'_'+\
