@@ -30,7 +30,7 @@ import os, sys, random
 
 
 
-def RK4(f, y, t, dt, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta):
+def RK4(f, y, t, dt, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta, sigma, pi_):
     '''
     Carry out a step of RK4 from time t using dt
     
@@ -48,6 +48,7 @@ def RK4(f, y, t, dt, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta):
     kappa:      Parameter from homework PDF
     rho:        Parameter from homework PDF
     delta:      Parameter from homework PDF
+    sigma:      Smelly bird repulsive force scalar factor
     
 
     Output
@@ -56,10 +57,10 @@ def RK4(f, y, t, dt, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta):
     '''
     
     # Task: Fill in the RK4 formula
-    k1 = dt*f(y,t, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta)
-    k2 = dt*f(y+k1/2.,t+dt/2., food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta)
-    k3 = dt*f(y+k2/2.,t+dt/2., food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta)
-    k4 = dt*f(y+k3,t+dt, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta)
+    k1 = dt*f(y,t, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta, sigma, pi_)
+    k2 = dt*f(y+k1/2.,t+dt/2., food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta, sigma, pi_)
+    k3 = dt*f(y+k2/2.,t+dt/2., food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta, sigma, pi_)
+    k4 = dt*f(y+k3,t+dt, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta, sigma, pi_)
 
     y = y + (1./6.)*(k1 + 2*k2 + 2*k3 + k4)
 
@@ -74,9 +75,10 @@ def C(t, food_flag):
 
 
 def P(t):
-    r = 2.0*np.sqrt(cos(2.0*t))
-
-    return (r*cos(t),r*sin(t))
+    rho = 2.0*np.sqrt(1j*cos(2.0*t))
+    r = np.sqrt(rho.real**2 + rho.imag**2)
+    x,y = (r*np.cos(t),r*np.sin(t))
+    return (x,y)
 
 def nearest_neighbors(b, c, k):
     '''
@@ -248,7 +250,7 @@ def flock_center(c):
     return center    
 
 
-def RHS(y, t, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta):
+def RHS(y, t, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta, sigma, pi_):
     '''
     Define the right hand side of the ODE
 
@@ -283,7 +285,15 @@ def RHS(y, t, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta):
         for n in nn:
             repelling += ((y[k] - n)/((y[k] - n)**2 + delta))
         f[k] += repelling*rho
-        
+
+
+    # smelly bird repulsive force
+    
+    f[2:] += sigma*(y[2:] - y[1])/((y[2:] - y[1])**2 + delta)
+    
+    # predator avoidance force
+
+    f[:] += pi_*(y[:] - P(t))/((y[:] - P(t))**2 + delta)
     return f
 
 
@@ -291,7 +301,7 @@ def RHS(y, t, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta):
 # Set up problem domain
 t0 = 0.0        # start time
 T = 10.0        # end time
-nsteps = 50     # number of time steps
+nsteps = 100     # number of time steps
 
 np.random.seed(2018)
 
@@ -312,6 +322,10 @@ food_flag = 1
 neighbors = 5
 # number of nearest neighbors to consider for repulsive force
 # calculations
+
+# EXTRA CREDIT
+sigma = 2.0 # smelly bird repulsion force scaling term
+pi_   = 2.0 # predator repulsion force scaling term
 
 # Apply Command Line Params
 # Assume the user isn't a jerk trying to break the parser
@@ -343,42 +357,65 @@ y = np.random.rand(birds,2)
 flock_diam = np.zeros((nsteps,))
 
 # Initialize the Movie Writer
-#FFMpegWriter = manimation.writers['ffmpeg']
-#writer = FFMpegWriter(fps=12)
-#fig = pyplot.figure(0)
-#pp, = pyplot.plot([],[], 'k+') 
-#rr, = pyplot.plot([],[], 'r+')
-#ff, = pyplot.plot([],[], 'c+')
-#pyplot.xlabel(r'$X$', fontsize='large')
-#pyplot.ylabel(r'$Y$', fontsize='large')
-#pyplot.xlim(-3,3)       # may need to adjust if birds fly outside box
-#pyplot.ylim(-3,3)       # may need to adjust if birds fly outside box
+FFMpegWriter = manimation.writers['ffmpeg']
+writer = FFMpegWriter(fps=12)
+fig = pyplot.figure(0)
+
+
+# flock plotting data
+# cc: flock w/o leader
+# ll: leader bird
+# ff: food
+# ss: smelly bird
+# pp: predator
+cc, = pyplot.plot([],[], 'k.') 
+ll, = pyplot.plot([],[], 'ro')
+ff, = pyplot.plot([],[], 'y*')
+ss, = pyplot.plot([],[], 'bP')
+pp, = pyplot.plot([],[], 'mX')
+pyplot.xlabel(r'$X$', fontsize='large')
+pyplot.ylabel(r'$Y$', fontsize='large')
+pyplot.xlim(-3,3)       # may need to adjust if birds fly outside box
+pyplot.ylim(-3,3)       # may need to adjust if birds fly outside box
 
 
 # Begin writing movie frames
-#with writer.saving(fig, "movie.mp4",dpi=648):
+with writer.saving(fig, "movie.mp4",dpi=648):
 
     # First frame
-#pp.set_data(y[1:,0], y[1:,1]) 
-#rr.set_data(y[0,0], y[0,1])
-#ff.set_data([C(t0,food_flag)[0]],[C(t0,food_flag)[1]])
-#writer.grab_frame()
+    p_x,p_y = P(t0)
+    c_x,c_y = C(t0,food_flag)
+    cc.set_data(y[2:,0], y[2:,1]) 
+    ll.set_data(y[0,0], y[0,1])
+    ff.set_data(c_x,c_y)
+    ss.set_data(y[1,0], y[1,1])
+    pp.set_data(p_x,p_y)
+    writer.grab_frame()
 
-t = t0
-for step in range(nsteps):
+    t = t0
+    i = 1
+    for step in range(nsteps):
+        if i % 10 == 0:
+            print('frame: '+str(i)+'/'+str(nsteps))
+
+        i += 1
         
-    # Task: Fill these two lines in
-    flock_diam[step] = flock_diameter(y)
-    y = RK4(RHS, y, t, dt, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta)
-    t += dt
+        # Task: Fill these two lines in
+        flock_diam[step] = flock_diameter(y)
+        y = RK4(RHS, y, t, dt, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta, sigma, pi_)
+        t += dt
+        p_x,p_y = P(t)
+        c_x,c_y = C(t,food_flag)
         
-    # Movie frame
-#   pp.set_data(y[:,0], y[:,1]) 
-#   rr.set_data(y[0,0], y[0,1])
-#   ff.set_data([C(t,food_flag)[0]],[C(t,food_flag)[1]])
-#   writer.grab_frame()
+        # Movie frame
+        cc.set_data(y[2:,0], y[2:,1]) 
+        ll.set_data(y[0,0], y[0,1])
+        ff.set_data(c_x,c_y)
+        ss.set_data(y[1,0], y[1,1])
+        pp.set_data(p_x,p_y)
+        writer.grab_frame()
+        
        
-
 # Task: Plot flock diameter
 #plot(..., flock_diam, ...)
 
