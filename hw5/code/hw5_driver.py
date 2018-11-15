@@ -12,7 +12,7 @@ import os, sys, random
 # Expected command line param format
 # python hw5_driver.py <number of birds> : [10, 30, 100]
 #                      <alpha>           : [0.2, 0.4, 0.8, 1.6, 3.2]
-#                      <gamma_1>         : [1, 2, 4, 8, 16]
+#                      <gamma_1>         : [0.5, 1, 2, 4, 8]
 #                      <gamma_2>         : [4, 8, 16, 32, 64]
 #                      <kappa>           : [2, 4, 8, 16, 32]
 #                      <rho>             : [1, 2, 4, 8, 16]
@@ -72,6 +72,11 @@ def C(t, food_flag):
     else:
         return (0.0, 0.0)
 
+
+def P(t):
+    r = 2.0*np.sqrt(cos(2.0*t))
+
+    return (r*cos(t),r*sin(t))
 
 def nearest_neighbors(b, c, k):
     '''
@@ -286,7 +291,7 @@ def RHS(y, t, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta):
 # Set up problem domain
 t0 = 0.0        # start time
 T = 10.0        # end time
-nsteps = 50    # number of time steps
+nsteps = 50     # number of time steps
 
 np.random.seed(2018)
 
@@ -363,7 +368,7 @@ t = t0
 for step in range(nsteps):
         
     # Task: Fill these two lines in
-    flock_diam[step] = flock_diameter_linregress(y)
+    flock_diam[step] = flock_diameter(y)
     y = RK4(RHS, y, t, dt, food_flag, alpha, gamma_1, gamma_2, kappa, rho, delta)
     t += dt
         
