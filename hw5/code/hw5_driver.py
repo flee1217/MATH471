@@ -13,17 +13,17 @@ import os, sys, random
 # python hw5_driver.py <movie_option>    : [0, 1]
 #                      <run_option>      : [0, 1, 2, 3]
 #                      <number of birds> : [10, 30, 100]
-#                      <alpha>           : [0.2, 0.4, 0.8, 1.6, 3.2]
-#                      <gamma_1>         : [0.5, 1, 2, 4, 8]
-#                      <gamma_2>         : [4, 8, 16, 32, 64]
-#                      <kappa>           : [2, 4, 8, 16, 32]
-#                      <rho>             : [1, 2, 4, 8, 16]
-#                      <delta>           : [0.25, 0.5, 1.0, 2.0, 4.0]
+#                      <alpha>           : [0.1, 0.2, 0.4, 0.8, 1.6]
+#                      <gamma_1>         : [0.5, 1.0, 2.0, 4.0, 8.0]
+#                      <gamma_2>         : [0.5, 1.0, 2.0, 4.0, 8.0]
+#                      <kappa>           : [0.25, .5, 1.0, 2.0, 4.0]
+#                      <rho>             : [0.5, 1.0, 2.0, 4.0, 8.0]
+#                      <delta>           : [.125, .25, .5, 1.0, 2.0]
 #                      <food_flag>       : [0, 1]
 #                      <sigma>           : [1.0, 2.0, 4.0, 8.0, 16.0]
 #                      <pi_>             : [1.0, 2.0, 4.0, 8.0, 16.0]
 #
-# default params: 0 0 30 0.2 2.0 8.0 4.0 2.0 0.5 1 8.0 4.0
+# default params: 0 0 30 0.4 2.0 8.0 4.0 2.0 0.5 1 8.0 4.0
 #
 # Proper usage is assumed (i.e. there are no safeguards in place for running
 # non-listed param sets, this is more to facilitate compatibility with the
