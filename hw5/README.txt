@@ -73,7 +73,7 @@ NOTE: All development and testing of this software took place on the Mac
                          <delta>           : [.125, .25, .5, 1.0, 2.0]
                          <food_flag>       : [0, 1]
                          <sigma>           : [1.0, 2.0, 4.0, 8.0, 16.0]
-                         <pi_>             : [1.0, 2.0, 4.0, 8.0, 16.0]
+                         <pi>              : [1.0, 2.0, 4.0, 8.0, 16.0]
 
 
     Proper usage is assumed (i.e. there are no safeguards in place for running
@@ -83,7 +83,7 @@ NOTE: All development and testing of this software took place on the Mac
     Parameters are processed in order, meaning the fourth argv entry (sys.argv[3])
     is expected to be number of birds
     
-    Additional params (after food_flag) are ignored
+    Additional params (after pi) are ignored
 
 - There will be 2 files that will be created as a result of running the
     above command. The file names are as follows:
