@@ -107,8 +107,8 @@ def euler_backward(A, u, ht, f, g):
     '''
     
     # Task: Form the system matrix for backward Euler
-    I = speye(A.shape[0], format='csr') - #...
-    G = #... 
+    I = speye(A.shape[0], format='csr') 
+    G = I - #... 
     
     # Task: return solution from Jacobi 
     return jacobi(G, #... 
@@ -168,6 +168,11 @@ T = 0.5
 ######
 
 for (nt, n) in zip(Nt_values, N_values):
+    
+    # In Parllel: Adding the below line may help you have problem sizes that
+    #          divide easily by numbers of processors like 8, 16, 32, and 64.  
+    #n = n + 2
+    
     # Declare time domain
     t0 = 0.0
     ht = (T - t0)/float(nt-1)
@@ -175,7 +180,8 @@ for (nt, n) in zip(Nt_values, N_values):
     # Declare spatial domain grid spacing
     h = 1.0 / (n-1.0)
     
-    # Task in parallel: Compute which portion of the spatial domain the current MPI rank owns.
+    # Task in parallel: Compute which portion of the spatial domain the current
+    #         MPI rank owns, i.e., compute start, end, start_halo, and end_halo
 
     # Remember, we assume a Dirichlet boundary condition, which simplifies
     # things a bit.  Thus, we only want a spatial grid from
