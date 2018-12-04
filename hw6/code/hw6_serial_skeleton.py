@@ -82,6 +82,7 @@ def jacobi(A, b, x0, tol, maxiter, start, start_halo, end, end_halo, N, comm):
     # compute initial residual norm
     r0 = ravel(b - A*x0)
     r0 = sqrt(dot(r0, r0))
+    print(r0)
 
     I = speye(A.shape[0], format='csr')
     r = zeros_like(r0)
@@ -97,8 +98,9 @@ def jacobi(A, b, x0, tol, maxiter, start, start_halo, end, end_halo, N, comm):
     #                   easier to debug and extend to CG.
     for i in range(maxiter):
         # Carry out Jacobi 
-        x = (I - Dinv*A)*x + Dinv*b
-        r = ravel(b-A*x)
+        G = (I - Dinv*A)
+        x = dot(G,x) + Dinv
+        r = ravel(b-A.dot(x.T))
         r = sqrt(dot(r,r))
         if (r/r0) < tol:
             return x
@@ -142,7 +144,7 @@ def euler_backward(A, u, ht, f, g, start, start_halo, end, end_halo, N, comm):
     b = u + ht*f + ht*g
     
     # initial solution guess to G*x = u + ht*f + ht*g = b
-    x0 = zeros_like(b)
+    x0 = zeros_like(u)
 
     # tolerance & maxiter get set here to match instructor func signatures in /hw6_hints.txt
     tol = 10.0**(-10.0)
@@ -150,7 +152,9 @@ def euler_backward(A, u, ht, f, g, start, start_halo, end, end_halo, N, comm):
     maxiter = 200
 
     # Task: return solution from Jacobi 
-    return jacobi(G, b, x0, tol, maxiter, start, start_halo, end, end_halo, N, comm)
+    k = jacobi(G, b, x0, tol, maxiter, start, start_halo, end, end_halo, N, comm)
+    print(str(k.shape))
+    return k
 
 
 ##
@@ -270,23 +274,22 @@ for (nt, n) in zip(Nt_values, N_values):
         # Task: Compute boundary contribution vector for the current time i*ht
         g = zeros((A.shape[0],))
 
-#        boundary_points = abs(Y - h) < 10.**(-12)
-#        g[boundary_points] += (1/h**2)*(uexact(t0+i*ht, X[boundary_points], Y[boundary_points] - h))
+        boundary_points = abs(Y - h) < 10.**(-12)
+        g[boundary_points] += (1/h**2)*(uexact(t0+i*ht, X[boundary_points], Y[boundary_points] - h))
 
-#        y_upper = abs(Y - (1. - h)) < 10.**(-12)
-#        g[y_upper] += (1/h**2)*(uexact(t0+i*ht, X[y_upper], Y[y_upper] + h))
+        y_upper = abs(Y - (1. - h)) < 10.**(-12)
+        g[y_upper] += (1/h**2)*(uexact(t0+i*ht, X[y_upper], Y[y_upper] + h))
 
-#        x_lower = abs(X - h) < 10.**(-12)
-#        g[x_lower] += (1/h**2)*(uexact(t0+i*ht, X[x_lower] - h, Y[x_lower]))
+        x_lower = abs(X - h) < 10.**(-12)
+        g[x_lower] += (1/h**2)*(uexact(t0+i*ht, X[x_lower] - h, Y[x_lower]))
 
-#        x_upper = abs(X - (1. - h)) < 10.**(-12)
-#        g[x_upper] += (1/h**2)*(uexact(t0+i*ht, X[x_upper] + h, Y[x_upper]))
-
+        x_upper = abs(X - (1. - h)) < 10.**(-12)
+        g[x_upper] += (1/h**2)*(uexact(t0+i*ht, X[x_upper] + h, Y[x_upper]))
 
         # Backward Euler
         # Task: fill in the arguments to backward Euler
-        u[i,:] = euler_backward(A, u[i-1,:], ht, f(t0+i*ht,X,Y), g, 0, 0, n, n, n-2, 0.0) #... 
-        
+        print(str(u.shape))
+        u[i,:] = euler_backward(A, u[i-1,:], ht, f(t0+i*ht,X,Y), g, 0, 0, n, n, n-2, 0.0)
 
     # Compute L2-norm of the error at final time
     e = (u - ue).reshape(-1,)
