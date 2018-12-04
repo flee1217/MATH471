@@ -4,6 +4,7 @@ from poisson import poisson
 
 # speye generates a sparse identity matrix
 from scipy.sparse import eye as speye
+from numpy.linalg import inv
 
 ######################
 ######################
@@ -50,15 +51,24 @@ from scipy.sparse import eye as speye
 ######################
 
 
-def jacobi(A, b, x0, tol, maxiter):
+def jacobi(A, b, x0, tol, maxiter, start, start_halo, end, end_halo, N, comm):
     '''
     Carry out the Jacobi method to invert A
 
     Input
     -----
-    A <CSR matrix>  : Matrix to invert
-    b <array>       : Right hand side
-    x0 <array>      : Initial solution guess
+    A          <CSR matrix> : Matrix to invert
+    b          <array>      : Right hand side
+    x0         <array>      : Initial solution guess
+    tol        <float>      : Halting tolerance for Jacobi
+    maxiter    <int>        : Max number of allowed Jacobi iterations
+    start      <int>        : First domain row owned by this processor (same as hw4)
+    start_halo <int>        : Halo region 'below' this processor (same as hw4)
+    end        <int>        : Last domain row owned by this processor (same as hw4)
+    end_halo   <int>        : Halo region 'above' this processor (same as hw4)
+    N          <int>        : Size of a domain row, excluding boundary points
+                              ==> N = n-2
+    comm       <MPI comm>   : MPI communicator
 
     Output
     ------
@@ -67,10 +77,15 @@ def jacobi(A, b, x0, tol, maxiter):
 
     # This useful function returns an array containing diag(A)
     D = A.diagonal()
+    Dinv = reciprocal(D)
     
     # compute initial residual norm
     r0 = ravel(b - A*x0)
     r0 = sqrt(dot(r0, r0))
+
+    I = speye(A.shape[0], format='csr')
+    r = zeros_like(r0)
+    x = zeros_like(x0)
 
     # Start Jacobi iterations 
     # Task in serial: implement Jacobi formula and halting if tolerance is satisfied
@@ -82,23 +97,36 @@ def jacobi(A, b, x0, tol, maxiter):
     #                   easier to debug and extend to CG.
     for i in range(maxiter):
         # Carry out Jacobi 
+        x = (I - Dinv*A)*x + Dinv*b
+        r = ravel(b-A*x)
+        r = sqrt(dot(r,r))
+        if (r/r0) < tol:
+            return x
 
+    # Task: Print out if Jacobi did not converge. In parallel, you'll want only rank 0 to print these out.    
+    if (r/r0) < tol:
+        print('Jacobi did not converge within' + str(maxiter) + ' steps')
 
-    # Task: Print out if Jacobi did not converge. In parallel, you'll want only rank 0 to print these out.
+    return x # Task: your solution vector
 
-    return # Task: your solution vector
-
-def euler_backward(A, u, ht, f, g):
+def euler_backward(A, u, ht, f, g, start, start_halo, end, end_halo, N, comm):
     '''
     Carry out backward Euler's method for one time step
     
     Input
     -----
-    A <CSR matrix>  : Discretization matrix of Poisson operator
-    u <array>       : Current solution vector at previous time step
-    ht <scalar>     : Time step size
-    f <array>       : Current forcing vector
-    g <array>       : Current vector containing boundary condition information
+    A          <CSR matrix> : Discretization matrix of Poisson operator
+    u          <array>      : Current solution vector at previous time step
+    ht         <scalar>     : Time step size
+    f          <array>      : Current forcing vector
+    g          <array>      : Current vector containing boundary condition information
+    start      <int>        : First domain row owned by this processor (same as hw4)
+    start_halo <int>        : Halo region 'below' this processor (same as hw4)
+    end        <int>        : Last domain row owned by this processor (same as hw4)
+    end_halo   <int>        : Halo region 'above' this processor (same as hw4)
+    N          <int>        : Size of a domain row, excluding boundary points
+                              ==> N = n-2
+    comm       <MPI comm>   : MPI communicator
 
     Output
     ------
@@ -107,11 +135,22 @@ def euler_backward(A, u, ht, f, g):
     '''
     
     # Task: Form the system matrix for backward Euler
-    I = speye(A.shape[0], format='csr') 
-    G = I - #... 
+    I = speye(A.shape[0], format='csr')
+    G = I - ht*A
+
+    # b is current state + ht*forcing function + ht*boundary conditions
+    b = u + ht*f + ht*g
     
+    # initial solution guess to G*x = u + ht*f + ht*g = b
+    x0 = zeros_like(b)
+
+    # tolerance & maxiter get set here to match instructor func signatures in /hw6_hints.txt
+    tol = 10.0**(-10.0)
+    # 200 as maxiter is seen (probably in lecture slides somewhere)
+    maxiter = 200
+
     # Task: return solution from Jacobi 
-    return jacobi(G, #... 
+    return jacobi(G, b, x0, tol, maxiter, start, start_halo, end, end_halo, N, comm)
 
 
 ##
@@ -136,14 +175,14 @@ def euler_backward(A, u, ht, f, g):
 # Declare the problem
 def uexact(t,x,y):
     # Task: fill in exact solution
-    return #...
+    return sin(pi*t)*sin(pi*x)*sin(pi*y) + 1.0 #...
 
 def f(t,x,y):
     # Forcing term
     # This should equal u_t - u_xx - u_yy
     
     # Task: fill in forcing term
-    return #...
+    return pi*cos(pi*t)*sin(pi*x)*sin(pi*y) + 2.0*pi*pi*uexact(t,x,y) #...
 
 # Loop over various numbers of time points (nt) and spatial grid sizes (n)
 error = []
@@ -190,7 +229,7 @@ for (nt, n) in zip(Nt_values, N_values):
     #
     # Task: fill in the spatial grid vector "pts"
     # Task: in parallel, you'll need this to be just the local grid plus halo region.  Mimic HW4 here.
-    pts = linspace(#...)
+    pts = linspace( h, 1.-h, n-2) #...)
     X,Y = meshgrid(pts, pts)
     X = X.reshape(-1,)
     Y = Y.reshape(-1,)
@@ -201,11 +240,10 @@ for (nt, n) in zip(Nt_values, N_values):
     #       [h, 2h, ..., 1-h] x [h, 2h, ..., 1-h]
     #       Pass in the right size to poisson.
     # Task: in parallel, A will be just a processors local part of A
-    A = poisson((sizex, sizey, format='csr')
+    A = poisson((n-2, n-2), format='csr')
 
     # Task: scale A by the grid size
-    A = #... 
-
+    A = (1.0/h**2.0)*A
 
     # Declare initial condition
     #   This initial condition obeys the boundary condition.
@@ -216,8 +254,8 @@ for (nt, n) in zip(Nt_values, N_values):
     # Task: what size should u and ue be?  u will store the numerical solution,
     #       and ue will store the exact solution.
     # Task in parallel: the size should only be for this processor's local portion of the domain.
-    u = zeros(#...
-    ue = zeros(#...
+    u = zeros((nt,A.shape[0]))
+    ue = zeros((nt,A.shape[0]))
 
     # Set initial condition
     u[0,:] = u0
@@ -227,21 +265,32 @@ for (nt, n) in zip(Nt_values, N_values):
     for i in range(1,nt):
         
         # Task: We need to store the exact solution so that we can compute the error
-        ue[i,:] = uexact(#...
+        ue[i,:] = uexact(t0+i*ht,X,Y) #...
         
         # Task: Compute boundary contribution vector for the current time i*ht
-        g = zeros((A.shape[0],)) 
-        boundary_points = (Y == h)
-        #g[boundary_points] += ... 
+        g = zeros((A.shape[0],))
+
+#        boundary_points = abs(Y - h) < 10.**(-12)
+#        g[boundary_points] += (1/h**2)*(uexact(t0+i*ht, X[boundary_points], Y[boundary_points] - h))
+
+#        y_upper = abs(Y - (1. - h)) < 10.**(-12)
+#        g[y_upper] += (1/h**2)*(uexact(t0+i*ht, X[y_upper], Y[y_upper] + h))
+
+#        x_lower = abs(X - h) < 10.**(-12)
+#        g[x_lower] += (1/h**2)*(uexact(t0+i*ht, X[x_lower] - h, Y[x_lower]))
+
+#        x_upper = abs(X - (1. - h)) < 10.**(-12)
+#        g[x_upper] += (1/h**2)*(uexact(t0+i*ht, X[x_upper] + h, Y[x_upper]))
+
 
         # Backward Euler
         # Task: fill in the arguments to backward Euler
-        u[i,:] = euler_backward(A, u[i-1,:], #... 
+        u[i,:] = euler_backward(A, u[i-1,:], ht, f(t0+i*ht,X,Y), g, 0, 0, n, n, n-2, 0.0) #... 
         
 
     # Compute L2-norm of the error at final time
     e = (u - ue).reshape(-1,)
-    enorm = # Task: compute the L2 norm over space-time here.  In serial this is just one line.  In parallel, write a helper function.
+    enorm = sqrt(dot(e,e))# Task: compute the L2 norm over space-time here.  In serial this is just one line.  In parallel, write a helper function.
     print "Nt, N, Error is:  " + str(nt) + ",  " + str(n) + ",  " + str(enorm)
     error.append(enorm)
 
