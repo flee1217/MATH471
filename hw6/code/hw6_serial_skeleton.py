@@ -82,11 +82,17 @@ def jacobi(A, b, x0, tol, maxiter, start, start_halo, end, end_halo, N, comm):
     # compute initial residual norm
     r0 = ravel(b - A*x0)
     r0 = sqrt(dot(r0, r0))
-    print(r0)
 
     I = speye(A.shape[0], format='csr')
     r = zeros_like(r0)
-    x = zeros_like(x0)
+    x = x0
+
+    x    = x.reshape(   (A.shape[0],-1))
+    Dinv = Dinv.reshape((A.shape[0],-1))
+    b    = b.reshape(   (A.shape[0],-1))
+
+    x1 = I - A.multiply(Dinv)
+    x2 = Dinv*b
 
     # Start Jacobi iterations 
     # Task in serial: implement Jacobi formula and halting if tolerance is satisfied
@@ -98,17 +104,17 @@ def jacobi(A, b, x0, tol, maxiter, start, start_halo, end, end_halo, N, comm):
     #                   easier to debug and extend to CG.
     for i in range(maxiter):
         # Carry out Jacobi 
-        G = (I - Dinv*A)
-        x = dot(G,x) + Dinv
-        r = ravel(b-A.dot(x.T))
+        x = x1*x + x2
+        r = ravel(b-A*x)
         r = sqrt(dot(r,r))
         if (r/r0) < tol:
+            print(str(i) + ' iterations to satisfy tolerance')
             return x
 
     # Task: Print out if Jacobi did not converge. In parallel, you'll want only rank 0 to print these out.    
     if (r/r0) < tol:
         print('Jacobi did not converge within' + str(maxiter) + ' steps')
-
+    
     return x # Task: your solution vector
 
 def euler_backward(A, u, ht, f, g, start, start_halo, end, end_halo, N, comm):
@@ -144,17 +150,16 @@ def euler_backward(A, u, ht, f, g, start, start_halo, end, end_halo, N, comm):
     b = u + ht*f + ht*g
     
     # initial solution guess to G*x = u + ht*f + ht*g = b
-    x0 = zeros_like(u)
+    x0 = u.copy()
 
     # tolerance & maxiter get set here to match instructor func signatures in /hw6_hints.txt
-    tol = 10.0**(-10.0)
+    tol = 10.0**(-10)
     # 200 as maxiter is seen (probably in lecture slides somewhere)
     maxiter = 200
 
     # Task: return solution from Jacobi 
     k = jacobi(G, b, x0, tol, maxiter, start, start_halo, end, end_halo, N, comm)
-    print(str(k.shape))
-    return k
+    return k.reshape((-1,))
 
 
 ##
@@ -179,7 +184,7 @@ def euler_backward(A, u, ht, f, g, start, start_halo, end, end_halo, N, comm):
 # Declare the problem
 def uexact(t,x,y):
     # Task: fill in exact solution
-    return sin(pi*t)*sin(pi*x)*sin(pi*y) + 1.0 #...
+    return sin(pi*t)*sin(pi*x)*sin(pi*y) #...
 
 def f(t,x,y):
     # Forcing term
@@ -206,7 +211,7 @@ error = []
 #
 # Two very small sizes for debugging
 Nt_values = array([8, 8*4])
-N_values = array([8,16])
+N_values = array([8,8])
 T = 0.5
 ######
 
@@ -274,8 +279,8 @@ for (nt, n) in zip(Nt_values, N_values):
         # Task: Compute boundary contribution vector for the current time i*ht
         g = zeros((A.shape[0],))
 
-        boundary_points = abs(Y - h) < 10.**(-12)
-        g[boundary_points] += (1/h**2)*(uexact(t0+i*ht, X[boundary_points], Y[boundary_points] - h))
+        y_lower = abs(Y - h) < 10.**(-12)
+        g[y_lower] += (1/h**2)*(uexact(t0+i*ht, X[y_lower], Y[y_lower] - h))
 
         y_upper = abs(Y - (1. - h)) < 10.**(-12)
         g[y_upper] += (1/h**2)*(uexact(t0+i*ht, X[y_upper], Y[y_upper] + h))
@@ -286,14 +291,14 @@ for (nt, n) in zip(Nt_values, N_values):
         x_upper = abs(X - (1. - h)) < 10.**(-12)
         g[x_upper] += (1/h**2)*(uexact(t0+i*ht, X[x_upper] + h, Y[x_upper]))
 
+
         # Backward Euler
         # Task: fill in the arguments to backward Euler
-        print(str(u.shape))
         u[i,:] = euler_backward(A, u[i-1,:], ht, f(t0+i*ht,X,Y), g, 0, 0, n, n, n-2, 0.0)
 
     # Compute L2-norm of the error at final time
-    e = (u - ue).reshape(-1,)
-    enorm = sqrt(dot(e,e))# Task: compute the L2 norm over space-time here.  In serial this is just one line.  In parallel, write a helper function.
+    e = (u[-1,:] - ue[-1,:]).reshape(-1,)
+    enorm = sqrt(dot(e,e)*h**2) # Task: compute the L2 norm over space-time here.  In serial this is just one line.  In parallel, write a helper function.
     print "Nt, N, Error is:  " + str(nt) + ",  " + str(n) + ",  " + str(enorm)
     error.append(enorm)
 
