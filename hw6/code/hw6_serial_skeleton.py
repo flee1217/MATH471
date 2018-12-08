@@ -184,14 +184,14 @@ def euler_backward(A, u, ht, f, g, start, start_halo, end, end_halo, N, comm):
 # Declare the problem
 def uexact(t,x,y):
     # Task: fill in exact solution
-    return sin(pi*t)*sin(pi*x)*sin(pi*y) #...
+    return cos(pi*t/2.)*cos(pi*x/2.)*cos(pi*y/2.)
 
 def f(t,x,y):
     # Forcing term
     # This should equal u_t - u_xx - u_yy
     
     # Task: fill in forcing term
-    return pi*cos(pi*t)*sin(pi*x)*sin(pi*y) + 2.0*pi*pi*uexact(t,x,y) #...
+    return -pi/2.*sin(pi*t/2.)*cos(pi*x/2.)*cos(pi*y/2.) + (.5)*(pi**2)*uexact(t,x,y)
 
 # Loop over various numbers of time points (nt) and spatial grid sizes (n)
 error = []
@@ -210,8 +210,8 @@ error = []
 #T = 0.5
 #
 # Two very small sizes for debugging
-Nt_values = array([8, 8*4])
-N_values = array([8,8])
+Nt_values = array([8,32,128])
+N_values = array([8,16,32])
 T = 0.5
 ######
 
@@ -294,6 +294,7 @@ for (nt, n) in zip(Nt_values, N_values):
 
         # Backward Euler
         # Task: fill in the arguments to backward Euler
+        print('at time: ' + str(i))
         u[i,:] = euler_backward(A, u[i-1,:], ht, f(t0+i*ht,X,Y), g, 0, 0, n, n, n-2, 0.0)
 
     # Compute L2-norm of the error at final time
@@ -304,7 +305,7 @@ for (nt, n) in zip(Nt_values, N_values):
 
 
     # You can turn this on to visualize the solution.  Possibly helpful for debugging.
-    if False: 
+    if True: 
         pyplot.figure(1)
         pyplot.imshow(u[0,:].reshape(n-2,n-2), origin='lower', extent=(0, 1, 0, 1))
         pyplot.colorbar()
@@ -313,24 +314,38 @@ for (nt, n) in zip(Nt_values, N_values):
         pyplot.title("Initial Condition")
         
         pyplot.figure(3)
-        pyplot.imshow(u[-1,:].reshape(n-2,n-2))
+        pyplot.imshow(u[-1,:].reshape(n-2,n-2), origin='lower', extent=(0, 1, 0, 1))
         pyplot.colorbar()
         pyplot.xlabel('X')
         pyplot.ylabel('Y')
         pyplot.title("Solution at final time")
        
         pyplot.figure(4)
-        pyplot.imshow(uexact(T,X,Y).reshape(n-2,n-2))
+        pyplot.imshow(uexact(T,X,Y).reshape(n-2,n-2), origin='lower', extent=(0, 1, 0, 1))
         pyplot.colorbar()
         pyplot.xlabel('X')
         pyplot.ylabel('Y')
         pyplot.title("Exact Solution at final time")
+
+        pyplot.figure(5)
+        pyplot.imshow((u[-1,:]-u[0,:]).reshape(n-2,n-2), origin='lower', extent=(0, 1, 0, 1))
+        pyplot.colorbar()
+        pyplot.xlabel('X')
+        pyplot.ylabel('Y')
+        pyplot.title("Numerical Difference at final time")
+
+        pyplot.figure(6)
+        pyplot.imshow((abs(uexact(T,X,Y)-u[0,:])).reshape(n-2,n-2), origin='lower', extent=(0, 1, 0, 1))
+        pyplot.colorbar()
+        pyplot.xlabel('X')
+        pyplot.ylabel('Y')
+        pyplot.title("Exact Difference at final time")
         
         pyplot.show()
 
 
 # Plot convergence 
-if False:
+if True:
     pyplot.loglog(1./N_values, 1./N_values**2, '-ok')
     pyplot.loglog(1./N_values, array(error), '-sr')
     pyplot.tick_params(labelsize='large')
