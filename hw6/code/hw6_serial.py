@@ -1,5 +1,5 @@
 from scipy import *
-from matplotlib import pyplot 
+from matplotlib import pyplot as plt
 from poisson import poisson
 
 # speye generates a sparse identity matrix
@@ -184,14 +184,14 @@ def euler_backward(A, u, ht, f, g, start, start_halo, end, end_halo, N, comm):
 # Declare the problem
 def uexact(t,x,y):
     # Task: fill in exact solution
-    return cos(pi*t/2.)*cos(pi*x/2.)*cos(pi*y/2.)
+    return cos(pi*t/4.)*cos(pi*x/4.)*cos(pi*y/4.)
 
 def f(t,x,y):
     # Forcing term
     # This should equal u_t - u_xx - u_yy
     
     # Task: fill in forcing term
-    return -pi/2.*sin(pi*t/2.)*cos(pi*x/2.)*cos(pi*y/2.) + (.5)*(pi**2)*uexact(t,x,y)
+    return -pi/4.*sin(pi*t/4.)*cos(pi*x/4.)*cos(pi*y/4.) + (.125)*(pi**2)*uexact(t,x,y)
 
 # Loop over various numbers of time points (nt) and spatial grid sizes (n)
 error = []
@@ -210,8 +210,8 @@ error = []
 #T = 0.5
 #
 # Two very small sizes for debugging
-Nt_values = array([8,32,128])
-N_values = array([8,16,32])
+Nt_values = array([8,32,128,512])
+N_values = array([8,16,32,64])
 T = 0.5
 ######
 
@@ -305,7 +305,7 @@ for (nt, n) in zip(Nt_values, N_values):
 
 
     # You can turn this on to visualize the solution.  Possibly helpful for debugging.
-    if True: 
+    if False: 
         pyplot.figure(1)
         pyplot.imshow(u[0,:].reshape(n-2,n-2), origin='lower', extent=(0, 1, 0, 1))
         pyplot.colorbar()
@@ -346,14 +346,17 @@ for (nt, n) in zip(Nt_values, N_values):
 
 # Plot convergence 
 if True:
-    pyplot.loglog(1./N_values, 1./N_values**2, '-ok')
-    pyplot.loglog(1./N_values, array(error), '-sr')
-    pyplot.tick_params(labelsize='large')
-    pyplot.xlabel(r'Spatial $h$', fontsize='large')
-    pyplot.ylabel(r'$||e||_{L_2}$', fontsize='large')
-    pyplot.legend(['Ref Quadratic', 'Computed Error'], fontsize='large')
-    pyplot.show()
-    #pyplot.savefig('error.png', dpi=500, format='png', bbox_inches='tight', pad_inches=0.0,)
+    f, fplot = plt.subplots()
+    
+    fplot.loglog(1./N_values, 1./N_values**2, '-ok')
+    fplot.loglog(1./N_values, array(error), '-sr')
+    fplot.tick_params(labelsize='large')
+    fplot.set_xlabel(r'Spatial $h$', fontsize='large')
+    fplot.set_ylabel(r'$||e||_{L_2}$', fontsize='large')
+    fplot.legend(['Ref Quadratic', 'Computed Error'], fontsize='large')
+    fplot.set_title('L2-Norm of Error e vs Spatial $h$',fontsize = 'large')
+    plt.show()
+    f.savefig('error.png', dpi=600, format='png', bbox_inches='tight', pad_inches=0.1)
 
 
 
