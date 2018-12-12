@@ -60,12 +60,15 @@ num_ranks = comm.size
 ######################
 ######################
 
-def vector_norm(v, comm):
+def vector_norm(v, h, comm):
     '''
     carry out ||v||_2
     '''
     # compute each proc's local portion of L2-norm of v
     # then do global all_reduce
+    v = v.reshape(-1,)
+    
+    part_norm = dot(v,v)
 
 
 def mat_vec(A, x, start, start_halo, end, end_halo, N, comm):
@@ -284,12 +287,14 @@ for (nt, n) in zip(Nt_values, N_values):
     # Task: in parallel, you'll need this to be just the local grid plus halo region.
     # Mimic HW4 here.
     x_pts = linspace( h, 1.-h, n-2)
-    y_pts = linspace( start_halo * h, (end_halo-1) * h, end_halo - start_halo)
+    y_pts = linspace( start_halo * h + h, (end_halo-1) * h + h, end_halo - start_halo)
     
     X,Y = meshgrid(x_pts, y_pts)
     X = X.reshape(-1,)
     Y = Y.reshape(-1,)
 
+    sys.stderr.write('proc: '+str(rank)+' X:\n' + str(X) + '\n')
+    sys.stderr.write('proc: '+str(rank)+ 'Y:\n' + str(Y) + '\n')
 
     # Declare spatial discretization matrix
     # Task: what dimension should A be?  remember the spatial grid is from 
@@ -323,7 +328,7 @@ for (nt, n) in zip(Nt_values, N_values):
     for i in range(1,nt):
         
         # Task: We need to store the exact solution so that we can compute the error
-        ue[i,:] = uexact(t0+i*ht,X,Y) #...
+        ue[i,:] = uexact(t0 + i*ht,X,Y) #...
         
         # Task: Compute boundary contribution vector for the current time i*ht
         g = zeros((A.shape[0],))
@@ -341,6 +346,10 @@ for (nt, n) in zip(Nt_values, N_values):
         g[x_upper] += (1/h**2)*(uexact(t0+i*ht, X[x_upper] + h, Y[x_upper]))
 
 
+        sys.stderr.write(str(rank) + ': ')
+        sys.stderr.write(str(rank) + ': boundary terms g:\n' + str(g) + '\n')
+        sys.exit()
+        
         # Backward Euler
         # Task: fill in the arguments to backward Euler
         print('at time: ' + str(i))
