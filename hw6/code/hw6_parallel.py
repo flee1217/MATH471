@@ -1,10 +1,20 @@
 from scipy import *
 from matplotlib import pyplot 
 from poisson import poisson
+from mpi4py import MPI
 
 # speye generates a sparse identity matrix
 from scipy.sparse import eye as speye
 from numpy.linalg import inv
+
+# stderr for debugging
+import sys
+# using sys.stderr.write() to print stuff to console
+
+# MPI stuff for communication
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+num_ranks = comm.size
 
 ######################
 ######################
@@ -49,6 +59,33 @@ from numpy.linalg import inv
 #
 ######################
 ######################
+
+def vector_norm(v, comm):
+    '''
+    carry out ||v||_2
+    '''
+    # compute each proc's local portion of L2-norm of v
+    # then do global all_reduce
+
+
+def mat_vec(A, x, start, start_halo, end, end_halo, N, comm):
+    '''
+    carry out a matvec A*x over the domain rows [start, end)
+    '''
+    # proc above is 'my rank + 1' and proc below is 'my rank - 1'
+
+    # if my_rank is not 0, then send second domain row in x to the proc below
+    #   This fills in the halo region on the proc below.
+
+    # if my_rank is not nprocs-1, then send second-to-last domain row in x to the proc above
+    #   This fills in the halo region on the proc above.
+
+    # if my_rank is not 0, then receive my bottom halo row from the proc below
+    #   This fills in my lower halo row (first row in x)
+
+    # if my_rank is not nprocs-1, then receive my top halo row from the next proc
+    #   This fills in my upper halo row (last row in x)
+                                              
 
 
 def jacobi(A, b, x0, tol, maxiter, start, start_halo, end, end_halo, N, comm):
@@ -172,9 +209,9 @@ def euler_backward(A, u, ht, f, g, start, start_halo, end, end_halo, N, comm):
 # u(t,x,y) = ...
 #
 # which in turn, implies a forcing term of f, where
-# f(t,x,y) = ...
+# f(t,x,y) = u_t - u_xx - u_yy
 #
-# u(t=0,x,y) = ...           zero initial condition
+# u(t=0,x,y) = cos(pi*(0)/2.)*cos(pi*x/2.)*cos(pi*y/2.)  zero initial condition
 #
 # g(t,x,y) = u(t,x,y) = ...    for x,y on the boundary
 #
@@ -210,8 +247,8 @@ error = []
 #T = 0.5
 #
 # Two very small sizes for debugging
-Nt_values = array([8,32,128])
-N_values = array([8,16,32])
+Nt_values = array([8,32])
+N_values = array([8,16])
 T = 0.5
 ######
 
@@ -219,7 +256,7 @@ for (nt, n) in zip(Nt_values, N_values):
     
     # In Parllel: Adding the below line may help you have problem sizes that
     #          divide easily by numbers of processors like 8, 16, 32, and 64.  
-    #n = n + 2
+    n = n + 2
     
     # Declare time domain
     t0 = 0.0
@@ -227,7 +264,14 @@ for (nt, n) in zip(Nt_values, N_values):
 
     # Declare spatial domain grid spacing
     h = 1.0 / (n-1.0)
-    
+
+    # own [ start, end ) rows (not including end)
+    start = rank * (n-2) / num_ranks
+    end = (rank + 1) * (n - 2) / num_ranks
+
+    # determining halo rows
+    start_halo = start - 1 if rank != 0 else start
+    end_halo = end + 1     if rank != (num_ranks - 1) else end
     # Task in parallel: Compute which portion of the spatial domain the current
     #         MPI rank owns, i.e., compute start, end, start_halo, and end_halo
 
@@ -237,9 +281,12 @@ for (nt, n) in zip(Nt_values, N_values):
     # We know what the solution looks like on the boundary, and don't need to solve for it.
     #
     # Task: fill in the spatial grid vector "pts"
-    # Task: in parallel, you'll need this to be just the local grid plus halo region.  Mimic HW4 here.
-    pts = linspace( h, 1.-h, n-2) #...)
-    X,Y = meshgrid(pts, pts)
+    # Task: in parallel, you'll need this to be just the local grid plus halo region.
+    # Mimic HW4 here.
+    x_pts = linspace( h, 1.-h, n-2)
+    y_pts = linspace( start_halo * h, (end_halo-1) * h, end_halo - start_halo)
+    
+    X,Y = meshgrid(x_pts, y_pts)
     X = X.reshape(-1,)
     Y = Y.reshape(-1,)
 
@@ -249,14 +296,15 @@ for (nt, n) in zip(Nt_values, N_values):
     #       [h, 2h, ..., 1-h] x [h, 2h, ..., 1-h]
     #       Pass in the right size to poisson.
     # Task: in parallel, A will be just a processors local part of A
-    A = poisson((n-2, n-2), format='csr')
+    # (x_pts, y_pts)
+    A = poisson((end_halo - start_halo, n-2), format='csr')
 
     # Task: scale A by the grid size
     A = (1.0/h**2.0)*A
 
     # Declare initial condition
     #   This initial condition obeys the boundary condition.
-    u0 = uexact(0, X, Y) 
+    u0 = uexact(0, X, Y)
 
 
     # Declare storage 
@@ -269,6 +317,7 @@ for (nt, n) in zip(Nt_values, N_values):
     # Set initial condition
     u[0,:] = u0
     ue[0,:] = u0
+
 
     # Run time-stepping
     for i in range(1,nt):
@@ -299,7 +348,9 @@ for (nt, n) in zip(Nt_values, N_values):
 
     # Compute L2-norm of the error at final time
     e = (u[-1,:] - ue[-1,:]).reshape(-1,)
-    enorm = sqrt(dot(e,e)*h**2) # Task: compute the L2 norm over space-time here.  In serial this is just one line.  In parallel, write a helper function.
+    enorm = sqrt(dot(e,e)*h**2)
+    # Task: compute the L2 norm over space-time here.
+    # In serial this is just one line.  In parallel, write a helper function.
     print "Nt, N, Error is:  " + str(nt) + ",  " + str(n) + ",  " + str(enorm)
     error.append(enorm)
 
