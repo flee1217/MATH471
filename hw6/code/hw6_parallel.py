@@ -130,8 +130,6 @@ def jacobi(A, b, x0, tol, maxiter, start, start_halo, end, end_halo, N, comm):
 
     I = speye(A.shape[0], format='csr')
     r = zeros_like(r0)
-    sys.stderr.write('proc ' + str(comm.Get_rank()) + ': r0 = ' +str(r0) + '\n')
-    sys.exit()
     x = x0
 
     x    = x.reshape(   (A.shape[0],-1))
