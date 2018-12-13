@@ -80,19 +80,22 @@ def mat_vec(A, x, start, start_halo, end, end_halo, N, comm):
     '''
     carry out a matvec A*x over the domain rows [start, end)
     '''
-    # proc above is 'my rank + 1' and proc below is 'my rank - 1'
+    # proc below is 'my rank + 1' and proc above is 'my rank - 1'
 
-    # if my_rank is not 0, then send second domain row in x to the proc below
-    #   This fills in the halo region on the proc below.
+    # if my_rank is not 0, then send second domain row in x to the proc above
+    #   This fills in the halo region on the proc above
+    if (rank != 0):
+        comm.Send([, MPI.DOUBLE], dest=1, tag=69)
 
-    # if my_rank is not nprocs-1, then send second-to-last domain row in x to the proc above
-    #   This fills in the halo region on the proc above.
+    # if my_rank is not nprocs-1, then send second-to-last domain row in x to
+    # the proc below
+    #   This fills in the halo region on the proc below
 
-    # if my_rank is not 0, then receive my bottom halo row from the proc below
-    #   This fills in my lower halo row (first row in x)
+    # if my_rank is not 0, then receive my top halo row from the proc above
+    #   This fills in my upper halo row (first row in x)
 
-    # if my_rank is not nprocs-1, then receive my top halo row from the next proc
-    #   This fills in my upper halo row (last row in x)
+    # if my_rank is not nprocs-1, then receive my bottom halo row from proc below
+    #   This fills in my lower halo row (last row in x)
                                               
 
 
@@ -127,6 +130,7 @@ def jacobi(A, b, x0, tol, maxiter, start, start_halo, end, end_halo, N, comm):
     # compute initial residual norm
     r0 = ravel(b - A*x0)
     r0 = vector_norm(r0, comm)
+    sys.stderr.write('proc '+str(rank)+': r0:'+str(r0[0])+'\n')
 
     I = speye(A.shape[0], format='csr')
     r = zeros_like(r0)
@@ -151,14 +155,15 @@ def jacobi(A, b, x0, tol, maxiter, start, start_halo, end, end_halo, N, comm):
         # Carry out Jacobi 
         x = x1*x + x2
         r = ravel(b-A*x)
-        r = sqrt(dot(r,r))
+        r = vector_norm(r, comm)
         if (r/r0) < tol:
             print(str(i) + ' iterations to satisfy tolerance')
             return x
 
-    # Task: Print out if Jacobi did not converge. In parallel, you'll want only rank 0 to print these out.    
-    if (r/r0) < tol:
-        print('Jacobi did not converge within' + str(maxiter) + ' steps')
+    # Task: Print out if Jacobi did not converge.
+    # In parallel, you'll want only rank 0 to print these out.
+    if (comm.Get_rank() == 0):
+        print('Jacobi did not converge within ' + str(maxiter) + ' steps')
     
     return x # Task: your solution vector
 
@@ -255,8 +260,8 @@ error = []
 #T = 0.5
 #
 # Two very small sizes for debugging
-Nt_values = array([8,32])
-N_values = array([8,16])
+Nt_values = array([8])
+N_values = array([8])
 T = 0.5
 ######
 
@@ -278,7 +283,7 @@ for (nt, n) in zip(Nt_values, N_values):
     end = (rank + 1) * (n - 2) / num_ranks
 
     # determining halo rows
-    start_halo = start - 1 if rank != 0 else start
+    start_halo = start - 1 if rank != 0               else start
     end_halo = end + 1     if rank != (num_ranks - 1) else end
     # Task in parallel: Compute which portion of the spatial domain the current
     #         MPI rank owns, i.e., compute start, end, start_halo, and end_halo
@@ -286,20 +291,21 @@ for (nt, n) in zip(Nt_values, N_values):
     # Remember, we assume a Dirichlet boundary condition, which simplifies
     # things a bit.  Thus, we only want a spatial grid from
     # [h, 2h, ..., 1-h] x [h, 2h, ..., 1-h].  
-    # We know what the solution looks like on the boundary, and don't need to solve for it.
-    #
+    # We know what the solution looks like on the boundary
+    # and don't need to solve for it.
+
     # Task: fill in the spatial grid vector "pts"
     # Task: in parallel, you'll need this to be just the local grid plus halo region.
     # Mimic HW4 here.
     x_pts = linspace( h, 1.-h, n-2)
     y_pts = linspace( start_halo * h + h, (end_halo-1) * h + h, end_halo - start_halo)
+
+    sys.stderr.write('proc '+str(rank)+': X:\n' + str(x_pts) + '\n' + \
+                     'Y:\n' +str(y_pts) + '\n')
     
     X,Y = meshgrid(x_pts, y_pts)
     X = X.reshape(-1,)
     Y = Y.reshape(-1,)
-
-    sys.stderr.write('proc: '+str(rank)+' X:\n' + str(X) + '\n')
-    sys.stderr.write('proc: '+str(rank)+ 'Y:\n' + str(Y) + '\n')
 
     # Declare spatial discretization matrix
     # Task: what dimension should A be?  remember the spatial grid is from 

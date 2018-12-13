@@ -2,6 +2,9 @@ from scipy import *
 from matplotlib import pyplot as plt
 from poisson import poisson
 
+# for debugging
+import sys
+
 # speye generates a sparse identity matrix
 from scipy.sparse import eye as speye
 from numpy.linalg import inv
@@ -82,6 +85,8 @@ def jacobi(A, b, x0, tol, maxiter, start, start_halo, end, end_halo, N, comm):
     # compute initial residual norm
     r0 = ravel(b - A*x0)
     r0 = sqrt(dot(r0, r0))
+
+    sys.stderr.write('r0: '+str(r0)+'\n')
 
     I = speye(A.shape[0], format='csr')
     r = zeros_like(r0)
@@ -210,8 +215,8 @@ error = []
 #T = 0.5
 #
 # Two very small sizes for debugging
-Nt_values = array([8, 32, 128, 512])
-N_values = array([8, 16, 32, 64])
+Nt_values = array([8])
+N_values = array([8])
 T = 0.5
 ######
 
