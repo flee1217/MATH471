@@ -210,8 +210,8 @@ error = []
 #T = 0.5
 #
 # Two very small sizes for debugging
-Nt_values = array([8,32,128,512])
-N_values = array([8,16,32,64])
+Nt_values = array([8, 32, 128, 512])
+N_values = array([8, 16, 32, 64])
 T = 0.5
 ######
 
@@ -305,47 +305,50 @@ for (nt, n) in zip(Nt_values, N_values):
 
 
     # You can turn this on to visualize the solution.  Possibly helpful for debugging.
-    if False: 
-        pyplot.figure(1)
-        pyplot.imshow(u[0,:].reshape(n-2,n-2), origin='lower', extent=(0, 1, 0, 1))
-        pyplot.colorbar()
-        pyplot.xlabel('X')
-        pyplot.ylabel('Y')
-        pyplot.title("Initial Condition")
+    if True:
+        ifig, iplot = plt.subplots()
+        plt.imshow(u[0,:].reshape(n-2,n-2), origin='lower', extent=(0, 1, 0, 1))
+        plt.colorbar()
+        iplot.set_xlabel('X', fontsize = 'xx-large')
+        iplot.set_ylabel('Y', fontsize = 'xx-large',
+                         rotation = 0,
+                         rotation_mode = 'anchor')
+        iplot.set_title("Initial Condition", fontsize = 'xx-large')
+        ifig.savefig('init.png', dpi=600, format='png', bbox_inches='tight', pad_inches=0.1)
         
-        pyplot.figure(3)
-        pyplot.imshow(u[-1,:].reshape(n-2,n-2), origin='lower', extent=(0, 1, 0, 1))
-        pyplot.colorbar()
-        pyplot.xlabel('X')
-        pyplot.ylabel('Y')
-        pyplot.title("Solution at final time")
+        nfig, nplot = plt.subplots()
+        plt.imshow(u[-1,:].reshape(n-2,n-2), origin='lower', extent=(0, 1, 0, 1))
+        plt.colorbar()
+        nplot.set_xlabel('X', fontsize = 'xx-large')
+        nplot.set_ylabel('Y', fontsize = 'xx-large',
+                         rotation = 0,
+                         rotation_mode = 'anchor')
+        nplot.set_title("Solution at final time", fontsize = 'xx-large')
+        nfig.savefig('final_numerical.png', dpi=600, format='png', bbox_inches='tight', pad_inches=0.1)
        
-        pyplot.figure(4)
-        pyplot.imshow(uexact(T,X,Y).reshape(n-2,n-2), origin='lower', extent=(0, 1, 0, 1))
-        pyplot.colorbar()
-        pyplot.xlabel('X')
-        pyplot.ylabel('Y')
-        pyplot.title("Exact Solution at final time")
+        efig, eplot = plt.subplots()
+        plt.imshow(uexact(T,X,Y).reshape(n-2,n-2), origin='lower', extent=(0, 1, 0, 1))
+        plt.colorbar()
+        eplot.set_xlabel('X', fontsize = 'xx-large')
+        eplot.set_ylabel('Y', fontsize = 'xx-large',
+                         rotation = 0,
+                         rotation_mode = 'anchor')
+        eplot.set_title("Exact Solution at final time", fontsize = 'xx-large')
+        efig.savefig('final_exact.png', dpi=600, format='png', bbox_inches='tight', pad_inches=0.1)
 
-        pyplot.figure(5)
-        pyplot.imshow((u[-1,:]-u[0,:]).reshape(n-2,n-2), origin='lower', extent=(0, 1, 0, 1))
-        pyplot.colorbar()
-        pyplot.xlabel('X')
-        pyplot.ylabel('Y')
-        pyplot.title("Numerical Difference at final time")
-
-        pyplot.figure(6)
-        pyplot.imshow((abs(uexact(T,X,Y)-u[0,:])).reshape(n-2,n-2), origin='lower', extent=(0, 1, 0, 1))
-        pyplot.colorbar()
-        pyplot.xlabel('X')
-        pyplot.ylabel('Y')
-        pyplot.title("Exact Difference at final time")
-        
-        pyplot.show()
+        dfig, dplot = plt.subplots()
+        plt.imshow((u[-1,:]-u[0,:]).reshape(n-2,n-2), origin='lower', extent=(0, 1, 0, 1))
+        plt.colorbar()
+        dplot.set_xlabel('X', fontsize = 'xx-large')
+        dplot.set_ylabel('Y', fontsize = 'xx-large',
+                         rotation = 0,
+                         rotation_mode = 'anchor')
+        dplot.set_title("Numerical Difference at final time", fontsize = 'xx-large')
+        dfig.savefig('diff_numerical.png', dpi=600, format='png', bbox_inches='tight', pad_inches=0.1)
 
 
 # Plot convergence 
-if True:
+if False:
     f, fplot = plt.subplots()
     
     fplot.loglog(1./N_values, 1./N_values**2, '-ok')
@@ -353,8 +356,11 @@ if True:
     fplot.tick_params(labelsize='large')
     fplot.set_xlabel(r'Spatial $h$', fontsize='large')
     fplot.set_ylabel(r'$||e||_{L_2}$', fontsize='large')
-    fplot.legend(['Ref Quadratic', 'Computed Error'], fontsize='large')
+    fplot.legend(['Ref Quadratic', 'Computed Error'], fontsize='large',loc = 2)
     fplot.set_title('L2-Norm of Error e vs Spatial $h$',fontsize = 'large')
+    fplot.set_xlim(10.**-2,.2)
+    ns = [1./float(n-1) for n in N_values]
+    
     plt.show()
     f.savefig('error.png', dpi=600, format='png', bbox_inches='tight', pad_inches=0.1)
 
