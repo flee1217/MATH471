@@ -1,5 +1,5 @@
 from scipy import *
-from matplotlib import pyplot 
+from matplotlib import pyplot as plt
 from poisson import poisson
 from mpi4py import MPI
 
@@ -60,7 +60,7 @@ num_ranks = comm.size
 ######################
 ######################
 
-def vector_norm(v, h, comm):
+def vector_norm(v, comm):
     '''
     carry out ||v||_2
     '''
@@ -69,6 +69,11 @@ def vector_norm(v, h, comm):
     v = v.reshape(-1,)
     
     part_norm = dot(v,v)
+    global_norm = zeros(1)
+
+    comm.Allreduce(part_norm, global_norm, op=MPI.SUM)
+
+    return sqrt(global_norm)
 
 
 def mat_vec(A, x, start, start_halo, end, end_halo, N, comm):
@@ -121,7 +126,7 @@ def jacobi(A, b, x0, tol, maxiter, start, start_halo, end, end_halo, N, comm):
     
     # compute initial residual norm
     r0 = ravel(b - A*x0)
-    r0 = sqrt(dot(r0, r0))
+    r0 = vector_norm(r0)
 
     I = speye(A.shape[0], format='csr')
     r = zeros_like(r0)
@@ -309,6 +314,7 @@ for (nt, n) in zip(Nt_values, N_values):
 
     # Declare initial condition
     #   This initial condition obeys the boundary condition.
+    sys.stderr.write('rank: ' + str(rank) + ', # of grid points: ' + str(len(X)) + '\n')
     u0 = uexact(0, X, Y)
 
 
@@ -322,7 +328,6 @@ for (nt, n) in zip(Nt_values, N_values):
     # Set initial condition
     u[0,:] = u0
     ue[0,:] = u0
-
 
     # Run time-stepping
     for i in range(1,nt):
@@ -345,27 +350,22 @@ for (nt, n) in zip(Nt_values, N_values):
         x_upper = abs(X - (1. - h)) < 10.**(-12)
         g[x_upper] += (1/h**2)*(uexact(t0+i*ht, X[x_upper] + h, Y[x_upper]))
 
-
-        sys.stderr.write(str(rank) + ': ')
-        sys.stderr.write(str(rank) + ': boundary terms g:\n' + str(g) + '\n')
-        sys.exit()
-        
         # Backward Euler
         # Task: fill in the arguments to backward Euler
         print('at time: ' + str(i))
-        u[i,:] = euler_backward(A, u[i-1,:], ht, f(t0+i*ht,X,Y), g, 0, 0, n, n, n-2, 0.0)
+        u[i,:] = euler_backward(A, u[i-1,:], ht, f(t0+i*ht,X,Y), g, start, start_halo, end, end_halo, n-2, comm)
 
     # Compute L2-norm of the error at final time
     e = (u[-1,:] - ue[-1,:]).reshape(-1,)
     enorm = sqrt(dot(e,e)*h**2)
     # Task: compute the L2 norm over space-time here.
     # In serial this is just one line.  In parallel, write a helper function.
-    print "Nt, N, Error is:  " + str(nt) + ",  " + str(n) + ",  " + str(enorm)
+    print "Nt, N, Error is:  " + str(nt) + ",  " + str(n-2) + ",  " + str(enorm)
     error.append(enorm)
 
 
     # You can turn this on to visualize the solution.  Possibly helpful for debugging.
-    if True: 
+    if False: 
         pyplot.figure(1)
         pyplot.imshow(u[0,:].reshape(n-2,n-2), origin='lower', extent=(0, 1, 0, 1))
         pyplot.colorbar()
@@ -405,16 +405,14 @@ for (nt, n) in zip(Nt_values, N_values):
 
 
 # Plot convergence 
-if True:
-    pyplot.loglog(1./N_values, 1./N_values**2, '-ok')
-    pyplot.loglog(1./N_values, array(error), '-sr')
-    pyplot.tick_params(labelsize='large')
-    pyplot.xlabel(r'Spatial $h$', fontsize='large')
-    pyplot.ylabel(r'$||e||_{L_2}$', fontsize='large')
-    pyplot.legend(['Ref Quadratic', 'Computed Error'], fontsize='large')
-    pyplot.show()
-    #pyplot.savefig('error.png', dpi=500, format='png', bbox_inches='tight', pad_inches=0.0,)
-
-
-
-
+if True and rank == 0:
+    f, fplot = plt.subplots()
+    fplot.loglog(1./N_values, 1./N_values**2, '-ok')
+    fplot.loglog(1./N_values, array(error), '-sr')
+    fplot.tick_params(labelsize='large')
+    fplot.set_xlabel(r'Spatial $h$', fontsize='large')
+    fplot.set_ylabel(r'$||e||_{L_2}$', fontsize='large')
+    fplot.legend(['Ref Quadratic', 'Computed Error'], fontsize='large', loc = 2)
+    fplot.set_title('L2-Norm of Error e vs Spatial $h$', fontsize = 'large')
+    #plt.show()
+    f.savefig('error.png', dpi=500, format='png', bbox_inches='tight', pad_inches=0.0,)
