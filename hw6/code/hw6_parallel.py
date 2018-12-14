@@ -7,6 +7,9 @@ from mpi4py import MPI
 from scipy.sparse import eye as speye
 from numpy.linalg import inv
 
+# debug var
+debug = False
+
 # stderr for debugging
 import sys
 # using sys.stderr.write() to print stuff to console
@@ -76,27 +79,78 @@ def vector_norm(v, comm):
     return sqrt(global_norm)
 
 
-def mat_vec(A, x, start, start_halo, end, end_halo, N, comm):
+def mat_vec(A, x, N, comm):
     '''
     carry out a matvec A*x over the domain rows [start, end)
+    x: presumably holds halo regions
     '''
+    new_x = zeros_like(x)
+
+    if (debug == True):
+        if (rank == 0):
+            print('p0: x before matvec:'+str(x))
+        elif (rank == 1):
+            print('p1: x before matvec:'+str(x))
+
     # proc below is 'my rank + 1' and proc above is 'my rank - 1'
 
     # if my_rank is not 0, then send second domain row in x to the proc above
     #   This fills in the halo region on the proc above
     if (rank != 0):
-        comm.Send([, MPI.DOUBLE], dest=1, tag=69)
+        comm.Send([x[N:2*N], MPI.DOUBLE], dest= rank - 1, tag = 45)
 
     # if my_rank is not nprocs-1, then send second-to-last domain row in x to
     # the proc below
     #   This fills in the halo region on the proc below
+    if (rank != num_ranks - 1):
+        comm.Send([x[-2*N:-N], MPI.DOUBLE], dest= rank + 1, tag = 45)
 
-    # if my_rank is not 0, then receive my top halo row from the proc above
+    # for inner points (points that don't require halo regions to apply mat_vec)
+    if (num_ranks == 1):
+        new_x = A*x
+    elif (rank == 0 and num_ranks > 1):
+        # update all but last two rows
+        new_x[:-2*N] = (A[:-N,:-N]*x[:-N])[:-N]
+    elif (rank == num_ranks - 1 and num_ranks > 1):
+        # update all but first two rows
+        new_x[2*N:] = (A[N:,N:]*x[N:])[N:]
+    else:
+        # update all but first and last two rows
+        new_x[2*N:-2*N] = (A[N:-N,N:-N]*x[N:-N])[N:-N]
+
+    # if my_rank is not 0,
+    # then receive my top halo row from the proc above
     #   This fills in my upper halo row (first row in x)
-
+    if (rank != 0):
+        if (debug == True):
+            print('x[:N] before recv: '+str(x[:N]))
+        comm.Recv([new_x[:N], MPI.DOUBLE], source = rank - 1, tag = 45)
+        if (debug == True):
+            print('x[:N] after recv: '+str(x[:N]))
+        # now have all info needed to update second row (first non halo row)
+        new_x[N:2*N] = (A[:3*N,:3*N]*x[:3*N])[N:-N]
+                  
     # if my_rank is not nprocs-1, then receive my bottom halo row from proc below
     #   This fills in my lower halo row (last row in x)
-                                              
+    if (rank != num_ranks - 1):
+        if (debug == True):
+            print('x[-N:] before recv: '+str(x[-N:]))
+        comm.Recv([new_x[-N:], MPI.DOUBLE], source = rank + 1, tag = 45)
+        if (debug == True):
+            print('x[-N:] after recv: '+str(x[-N:]))        
+        # now have all info need to update second to last row (last non halo row)
+        new_x[-2*N:-N] = (A[2*N:,2*N:]*x[2*N:])[N:-N]
+
+
+    if (debug == True):
+        if (rank == 0):
+            print('p0: x[:-N] after matvec:'+str(new_x[:]))
+            savetxt('p0x.txt',new_x[:-N],fmt='%.10e',delimiter=',',newline='\n')
+        elif (rank == 1):
+            print('p1: x[N:] after matvec:'+str(new_x[:]))
+            savetxt('p1x.txt',new_x[N:],fmt='%.10e',delimiter=',',newline='\n')
+
+    return new_x
 
 
 def jacobi(A, b, x0, tol, maxiter, start, start_halo, end, end_halo, N, comm):
@@ -126,17 +180,22 @@ def jacobi(A, b, x0, tol, maxiter, start, start_halo, end, end_halo, N, comm):
     # This useful function returns an array containing diag(A)
     D = A.diagonal()
     Dinv = reciprocal(D)
-    
-    # compute initial residual norm
-    r0 = ravel(b - A*x0)
-    r0 = vector_norm(r0, comm)
-    sys.stderr.write('proc '+str(rank)+': r0:'+str(r0[0])+'\n')
 
+    # compute initial residual norm
+    r0 = ravel(b - mat_vec(A, x0, N, comm))
+    if (rank == 0):
+        if (num_ranks > 1):
+            r0 = r0[:-N]
+    elif(rank == num_ranks - 1 and num_ranks > 1):
+        r0 = r0[N:]
+    else:
+        r0 = r0[N:-N]
+
+    r0 = vector_norm(r0, comm)
     I = speye(A.shape[0], format='csr')
     r = zeros_like(r0)
     x = x0
 
-    x    = x.reshape(   (A.shape[0],-1))
     Dinv = Dinv.reshape((A.shape[0],-1))
     b    = b.reshape(   (A.shape[0],-1))
 
@@ -153,18 +212,33 @@ def jacobi(A, b, x0, tol, maxiter, start, start_halo, end, end_halo, N, comm):
     #                   easier to debug and extend to CG.
     for i in range(maxiter):
         # Carry out Jacobi 
-        x = x1*x + x2
-        r = ravel(b-A*x)
+        x = mat_vec(x1,x.reshape((A.shape[0],-1)),N,comm) + x2
+        
+        sys.stderr.write('p'+str(rank)+'\nx.shape'+str(x.shape)+'\n')
+        r = ravel(b - mat_vec(A, x, N, comm))
+        sys.stderr.write('p'+str(rank)+'\nb:'+str(b)+'\n')
+        sys.stderr.write('p'+str(rank)+'\nA*x:'+str(mat_vec(A,x,N,comm))+'\n')
+        savetxt('p'+str(rank)+'A*x.txt',mat_vec(A,x,N,comm),delimiter=',',newline='\n')
+#        sys.stderr.write('p'+str(rank)+'\nr:'+str(r)+'\n')
+        sys.exit()
+        if (rank == 0):
+            if (num_ranks > 1):
+                r = r[:-N]
+        elif(rank == num_ranks - 1 and num_ranks > 1):
+            r = r[N:]
+        else:
+            r = r[N:-N]
         r = vector_norm(r, comm)
         if (r/r0) < tol:
-            print(str(i) + ' iterations to satisfy tolerance')
+            if (rank == 0):
+                print(str(i) + ' iterations to satisfy tolerance')
             return x
 
     # Task: Print out if Jacobi did not converge.
     # In parallel, you'll want only rank 0 to print these out.
-    if (comm.Get_rank() == 0):
+    if (rank == 0):
         print('Jacobi did not converge within ' + str(maxiter) + ' steps')
-    
+
     return x # Task: your solution vector
 
 def euler_backward(A, u, ht, f, g, start, start_halo, end, end_halo, N, comm):
@@ -234,14 +308,14 @@ def euler_backward(A, u, ht, f, g, start, start_halo, end, end_halo, N, comm):
 # Declare the problem
 def uexact(t,x,y):
     # Task: fill in exact solution
-    return cos(pi*t/2.)*cos(pi*x/2.)*cos(pi*y/2.)
+    return cos(pi*t/4.)*cos(pi*x/4.)*cos(pi*y/4.)
 
 def f(t,x,y):
     # Forcing term
     # This should equal u_t - u_xx - u_yy
     
     # Task: fill in forcing term
-    return -pi/2.*sin(pi*t/2.)*cos(pi*x/2.)*cos(pi*y/2.) + (.5)*(pi**2)*uexact(t,x,y)
+    return -pi/4.*sin(pi*t/4.)*cos(pi*x/4.)*cos(pi*y/4.) + (.125)*(pi**2)*uexact(t,x,y)
 
 # Loop over various numbers of time points (nt) and spatial grid sizes (n)
 error = []
@@ -299,10 +373,6 @@ for (nt, n) in zip(Nt_values, N_values):
     # Mimic HW4 here.
     x_pts = linspace( h, 1.-h, n-2)
     y_pts = linspace( start_halo * h + h, (end_halo-1) * h + h, end_halo - start_halo)
-
-    sys.stderr.write('proc '+str(rank)+': X:\n' + str(x_pts) + '\n' + \
-                     'Y:\n' +str(y_pts) + '\n')
-    
     X,Y = meshgrid(x_pts, y_pts)
     X = X.reshape(-1,)
     Y = Y.reshape(-1,)
@@ -320,9 +390,7 @@ for (nt, n) in zip(Nt_values, N_values):
 
     # Declare initial condition
     #   This initial condition obeys the boundary condition.
-    sys.stderr.write('rank: ' + str(rank) + ', # of grid points: ' + str(len(X)) + '\n')
     u0 = uexact(0, X, Y)
-
 
     # Declare storage 
     # Task: what size should u and ue be?  u will store the numerical solution,
@@ -358,15 +426,19 @@ for (nt, n) in zip(Nt_values, N_values):
 
         # Backward Euler
         # Task: fill in the arguments to backward Euler
-        print('at time: ' + str(i))
+        if (rank == 0):
+            print('at time: ' + str(i))
+
         u[i,:] = euler_backward(A, u[i-1,:], ht, f(t0+i*ht,X,Y), g, start, start_halo, end, end_halo, n-2, comm)
+        sys.exit()
 
     # Compute L2-norm of the error at final time
     e = (u[-1,:] - ue[-1,:]).reshape(-1,)
-    enorm = sqrt(dot(e,e)*h**2)
+    enorm = vector_norm(e, comm)*h #sqrt(dot(e,e)*h**2)
     # Task: compute the L2 norm over space-time here.
     # In serial this is just one line.  In parallel, write a helper function.
-    print "Nt, N, Error is:  " + str(nt) + ",  " + str(n-2) + ",  " + str(enorm)
+    if (rank == 0):
+        print "Nt, N, Error is:  " + str(nt) + ",  " + str(n-2) + ",  " + str(enorm[0])
     error.append(enorm)
 
 
@@ -411,7 +483,7 @@ for (nt, n) in zip(Nt_values, N_values):
 
 
 # Plot convergence 
-if True and rank == 0:
+if False and rank == 0:
     f, fplot = plt.subplots()
     fplot.loglog(1./N_values, 1./N_values**2, '-ok')
     fplot.loglog(1./N_values, array(error), '-sr')

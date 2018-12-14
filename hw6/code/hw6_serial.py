@@ -84,9 +84,9 @@ def jacobi(A, b, x0, tol, maxiter, start, start_halo, end, end_halo, N, comm):
     
     # compute initial residual norm
     r0 = ravel(b - A*x0)
+    savetxt('s0x.txt',A*x0,fmt='%.10e',delimiter=',',newline='\n')
     r0 = sqrt(dot(r0, r0))
-
-    sys.stderr.write('r0: '+str(r0)+'\n')
+    print('r0: '+str(r0))
 
     I = speye(A.shape[0], format='csr')
     r = zeros_like(r0)
@@ -111,15 +111,19 @@ def jacobi(A, b, x0, tol, maxiter, start, start_halo, end, end_halo, N, comm):
         # Carry out Jacobi 
         x = x1*x + x2
         r = ravel(b-A*x)
+        print('s\nb:'+str(b))
+        print('s\nA*x:'+str(A*x))
+        savetxt('sA*x.txt',A*x,delimiter=',',newline='\n')
+#        print('s\nr:'+str(r))
+        sys.exit()
         r = sqrt(dot(r,r))
         if (r/r0) < tol:
             print(str(i) + ' iterations to satisfy tolerance')
             return x
 
-    # Task: Print out if Jacobi did not converge. In parallel, you'll want only rank 0 to print these out.    
-    if (r/r0) < tol:
-        print('Jacobi did not converge within' + str(maxiter) + ' steps')
-    
+    # Task: Print out if Jacobi did not converge. In parallel, you'll want only rank 0 to print these out.
+    print('Jacobi did not converge within ' + str(maxiter) + ' steps')
+
     return x # Task: your solution vector
 
 def euler_backward(A, u, ht, f, g, start, start_halo, end, end_halo, N, comm):
@@ -224,7 +228,7 @@ for (nt, n) in zip(Nt_values, N_values):
     
     # In Parllel: Adding the below line may help you have problem sizes that
     #          divide easily by numbers of processors like 8, 16, 32, and 64.  
-    #n = n + 2
+    n = n + 2
     
     # Declare time domain
     t0 = 0.0
@@ -256,13 +260,13 @@ for (nt, n) in zip(Nt_values, N_values):
     # Task: in parallel, A will be just a processors local part of A
     A = poisson((n-2, n-2), format='csr')
 
+
     # Task: scale A by the grid size
     A = (1.0/h**2.0)*A
 
     # Declare initial condition
     #   This initial condition obeys the boundary condition.
-    u0 = uexact(0, X, Y) 
-
+    u0 = uexact(0, X, Y)
 
     # Declare storage 
     # Task: what size should u and ue be?  u will store the numerical solution,
@@ -301,16 +305,17 @@ for (nt, n) in zip(Nt_values, N_values):
         # Task: fill in the arguments to backward Euler
         print('at time: ' + str(i))
         u[i,:] = euler_backward(A, u[i-1,:], ht, f(t0+i*ht,X,Y), g, 0, 0, n, n, n-2, 0.0)
+        sys.exit()
 
     # Compute L2-norm of the error at final time
     e = (u[-1,:] - ue[-1,:]).reshape(-1,)
     enorm = sqrt(dot(e,e)*h**2) # Task: compute the L2 norm over space-time here.  In serial this is just one line.  In parallel, write a helper function.
-    print "Nt, N, Error is:  " + str(nt) + ",  " + str(n) + ",  " + str(enorm)
+    print "Nt, N, Error is:  " + str(nt) + ",  " + str(n-2) + ",  " + str(enorm)
     error.append(enorm)
 
 
     # You can turn this on to visualize the solution.  Possibly helpful for debugging.
-    if True:
+    if False:
         ifig, iplot = plt.subplots()
         plt.imshow(u[0,:].reshape(n-2,n-2), origin='lower', extent=(0, 1, 0, 1))
         plt.colorbar()
