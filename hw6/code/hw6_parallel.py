@@ -317,8 +317,8 @@ error = []
 #T = 0.5
 #
 # Two very small sizes for debugging
-Nt_values = array([8])
-N_values = array([8])
+Nt_values = array([8, 32, 128])
+N_values = array([8, 16, 32])
 T = 0.5
 ######
 
@@ -417,11 +417,11 @@ for (nt, n) in zip(Nt_values, N_values):
 
     if (rank == 0):
         if (num_ranks > 1):
-            savedata_thenexit('p'+str(rank),'ufinal',u[-1,:-(n-2)])
+            savetxt('p'+str(rank)+'ufinal_N='+str(n-2)+'_N_t='+str(nt)+'.txt',u[-1,:-(n-2)],delimiter=',',newline='\n')
     elif (rank == num_ranks - 1):
-        savedata_thenexit('p'+str(rank),'ufinal',u[-1,(n-2):])
+        savetxt('p'+str(rank)+'ufinal_N='+str(n-2)+'_N_t='+str(nt)+'.txt',u[-1,(n-2):],delimiter=',',newline='\n')
     else:
-        savedata_thenexit('p'+str(rank),'ufinal',u[-1,(n-2):-(n-2)])
+        savetxt('p'+str(rank)+'ufinal_N='+str(n-2)+'_N_t='+str(nt)+'.txt',u[-1,(n-2):-(n-2)],delimiter=',',newline='\n')
     # Compute L2-norm of the error at final time
     e = (u[-1,:] - ue[-1,:]).reshape(-1,)
     if (rank == 0):
@@ -479,6 +479,7 @@ for (nt, n) in zip(Nt_values, N_values):
         pyplot.show()
 
 
+savetxt('error.txt',error,delimiter=',',newline='\n')
 # Plot convergence 
 if False and rank == 0:
     f, fplot = plt.subplots()
