@@ -2,6 +2,7 @@ from scipy import *
 from matplotlib import pyplot as plt
 from poisson import poisson
 from mpi4py import MPI
+from helpers import *
 
 # speye generates a sparse identity matrix
 from scipy.sparse import eye as speye
@@ -73,9 +74,7 @@ def vector_norm(v, comm):
     
     part_norm = dot(v,v)
     global_norm = zeros(1)
-
     comm.Allreduce(part_norm, global_norm, op=MPI.SUM)
-
     return sqrt(global_norm)
 
 
@@ -84,13 +83,8 @@ def mat_vec(A, x, N, comm):
     carry out a matvec A*x over the domain rows [start, end)
     x: presumably holds halo regions
     '''
+    x = x.reshape((x.size,1))
     new_x = zeros_like(x)
-
-    if (debug == True):
-        if (rank == 0):
-            print('p0: x before matvec:'+str(x))
-        elif (rank == 1):
-            print('p1: x before matvec:'+str(x))
 
     # proc below is 'my rank + 1' and proc above is 'my rank - 1'
 
@@ -122,33 +116,26 @@ def mat_vec(A, x, N, comm):
     # then receive my top halo row from the proc above
     #   This fills in my upper halo row (first row in x)
     if (rank != 0):
-        if (debug == True):
-            print('x[:N] before recv: '+str(x[:N]))
-        comm.Recv([new_x[:N], MPI.DOUBLE], source = rank - 1, tag = 45)
-        if (debug == True):
-            print('x[:N] after recv: '+str(x[:N]))
+        comm.Recv([x[:N], MPI.DOUBLE], source = rank - 1, tag = 45)
         # now have all info needed to update second row (first non halo row)
-        new_x[N:2*N] = (A[:3*N,:3*N]*x[:3*N])[N:-N]
+
+        # special case where num_procs == 8 == number of domain rows
+        if (A.shape[0] == 16 and num_ranks == 8):
+             new_x[N:2*N] = (A*x)[:N]
+        else:
+            new_x[N:2*N] = (A[:3*N,:3*N]*x[:3*N])[N:-N]
                   
     # if my_rank is not nprocs-1, then receive my bottom halo row from proc below
     #   This fills in my lower halo row (last row in x)
     if (rank != num_ranks - 1):
-        if (debug == True):
-            print('x[-N:] before recv: '+str(x[-N:]))
-        comm.Recv([new_x[-N:], MPI.DOUBLE], source = rank + 1, tag = 45)
-        if (debug == True):
-            print('x[-N:] after recv: '+str(x[-N:]))        
+        comm.Recv([x[-N:], MPI.DOUBLE], source = rank + 1, tag = 45)
         # now have all info need to update second to last row (last non halo row)
-        new_x[-2*N:-N] = (A[2*N:,2*N:]*x[2*N:])[N:-N]
 
-
-    if (debug == True):
-        if (rank == 0):
-            print('p0: x[:-N] after matvec:'+str(new_x[:]))
-            savetxt('p0x.txt',new_x[:-N],fmt='%.10e',delimiter=',',newline='\n')
-        elif (rank == 1):
-            print('p1: x[N:] after matvec:'+str(new_x[:]))
-            savetxt('p1x.txt',new_x[N:],fmt='%.10e',delimiter=',',newline='\n')
+        # special case where num_procs == 8 == number of domain rows
+        if (A.shape[0] == 16 and num_ranks == 8):
+            new_x[N:2*N] = (A*x)[-N:]
+        else:
+            new_x[-2*N:-N] = (A[-3*N:,-3*N:]*x[-3*N:])[N:-N]
 
     return new_x
 
@@ -180,17 +167,21 @@ def jacobi(A, b, x0, tol, maxiter, start, start_halo, end, end_halo, N, comm):
     # This useful function returns an array containing diag(A)
     D = A.diagonal()
     Dinv = reciprocal(D)
+    x0 = x0.reshape((A.shape[0],-1))
 
     # compute initial residual norm
-    r0 = ravel(b - mat_vec(A, x0, N, comm))
+    Ax0 = mat_vec(A,x0,N,comm)
+    r0 = ravel(b - Ax0.reshape((-1,)))
+
+    # after differencing Ax and b, trim halo regions for a vec_norm that makes sense
     if (rank == 0):
         if (num_ranks > 1):
             r0 = r0[:-N]
-    elif(rank == num_ranks - 1 and num_ranks > 1):
+    elif (rank == num_ranks - 1):
         r0 = r0[N:]
     else:
         r0 = r0[N:-N]
-
+            
     r0 = vector_norm(r0, comm)
     I = speye(A.shape[0], format='csr')
     r = zeros_like(r0)
@@ -211,16 +202,9 @@ def jacobi(A, b, x0, tol, maxiter, start, start_halo, end, end_halo, N, comm):
     #                   matrix-vector product, as this will make your code much, much 
     #                   easier to debug and extend to CG.
     for i in range(maxiter):
-        # Carry out Jacobi 
-        x = mat_vec(x1,x.reshape((A.shape[0],-1)),N,comm) + x2
-        
-        sys.stderr.write('p'+str(rank)+'\nx.shape'+str(x.shape)+'\n')
+        # Carry out Jacobi
+        x = x1*x + x2
         r = ravel(b - mat_vec(A, x, N, comm))
-        sys.stderr.write('p'+str(rank)+'\nb:'+str(b)+'\n')
-        sys.stderr.write('p'+str(rank)+'\nA*x:'+str(mat_vec(A,x,N,comm))+'\n')
-        savetxt('p'+str(rank)+'A*x.txt',mat_vec(A,x,N,comm),delimiter=',',newline='\n')
-#        sys.stderr.write('p'+str(rank)+'\nr:'+str(r)+'\n')
-        sys.exit()
         if (rank == 0):
             if (num_ranks > 1):
                 r = r[:-N]
@@ -238,7 +222,6 @@ def jacobi(A, b, x0, tol, maxiter, start, start_halo, end, end_halo, N, comm):
     # In parallel, you'll want only rank 0 to print these out.
     if (rank == 0):
         print('Jacobi did not converge within ' + str(maxiter) + ' steps')
-
     return x # Task: your solution vector
 
 def euler_backward(A, u, ht, f, g, start, start_halo, end, end_halo, N, comm):
@@ -430,10 +413,16 @@ for (nt, n) in zip(Nt_values, N_values):
             print('at time: ' + str(i))
 
         u[i,:] = euler_backward(A, u[i-1,:], ht, f(t0+i*ht,X,Y), g, start, start_halo, end, end_halo, n-2, comm)
-        sys.exit()
 
     # Compute L2-norm of the error at final time
     e = (u[-1,:] - ue[-1,:]).reshape(-1,)
+    if (rank == 0):
+        if (num_ranks > 1):
+            e = e[:-(n-2)]
+    elif (rank == num_ranks - 1):
+        e = e[(n-2):]
+    else:
+        e = e[(n-2):-(n-2)]
     enorm = vector_norm(e, comm)*h #sqrt(dot(e,e)*h**2)
     # Task: compute the L2 norm over space-time here.
     # In serial this is just one line.  In parallel, write a helper function.
