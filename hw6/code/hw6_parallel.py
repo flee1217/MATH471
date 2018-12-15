@@ -414,6 +414,14 @@ for (nt, n) in zip(Nt_values, N_values):
 
         u[i,:] = euler_backward(A, u[i-1,:], ht, f(t0+i*ht,X,Y), g, start, start_halo, end, end_halo, n-2, comm)
 
+
+    if (rank == 0):
+        if (num_ranks > 1):
+            savedata_thenexit('p'+str(rank),'ufinal',u[-1,:-(n-2)])
+    elif (rank == num_ranks - 1):
+        savedata_thenexit('p'+str(rank),'ufinal',u[-1,(n-2):])
+    else:
+        savedata_thenexit('p'+str(rank),'ufinal',u[-1,(n-2):-(n-2)])
     # Compute L2-norm of the error at final time
     e = (u[-1,:] - ue[-1,:]).reshape(-1,)
     if (rank == 0):
