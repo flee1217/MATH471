@@ -1,8 +1,11 @@
 from scipy import *
-from matplotlib import pyplot as plt
+#from matplotlib import pyplot as plt
 from poisson import poisson
 from mpi4py import MPI
 from helpers import *
+
+# for timings
+import time
 
 # speye generates a sparse identity matrix
 from scipy.sparse import eye as speye
@@ -10,6 +13,7 @@ from numpy.linalg import inv
 
 # debug var
 debug = False
+outputFinalState = False
 
 # stderr for debugging
 import sys
@@ -317,10 +321,11 @@ error = []
 #T = 0.5
 #
 # Two very small sizes for debugging
-Nt_values = array([8, 32, 128])
-N_values = array([8, 16, 32])
+Nt_values = array([256])
+N_values = array([256])
 T = 0.5
 ######
+
 
 for (nt, n) in zip(Nt_values, N_values):
     
@@ -386,6 +391,7 @@ for (nt, n) in zip(Nt_values, N_values):
     u[0,:] = u0
     ue[0,:] = u0
 
+    start = time.time()
     # Run time-stepping
     for i in range(1,nt):
         
@@ -415,13 +421,17 @@ for (nt, n) in zip(Nt_values, N_values):
         u[i,:] = euler_backward(A, u[i-1,:], ht, f(t0+i*ht,X,Y), g, start, start_halo, end, end_halo, n-2, comm)
 
 
+    end = time.time()
     if (rank == 0):
-        if (num_ranks > 1):
-            savetxt('p'+str(rank)+'ufinal_N='+str(n-2)+'_N_t='+str(nt)+'.txt',u[-1,:-(n-2)],delimiter=',',newline='\n')
-    elif (rank == num_ranks - 1):
-        savetxt('p'+str(rank)+'ufinal_N='+str(n-2)+'_N_t='+str(nt)+'.txt',u[-1,(n-2):],delimiter=',',newline='\n')
-    else:
-        savetxt('p'+str(rank)+'ufinal_N='+str(n-2)+'_N_t='+str(nt)+'.txt',u[-1,(n-2):-(n-2)],delimiter=',',newline='\n')
+        print('time: ' + str(end - start))
+    if (outputFinalState == True):
+        if (rank == 0):
+            if (num_ranks > 1):
+                savetxt('p'+str(rank)+'ufinal_N='+str(n-2)+'_N_t='+str(nt)+'.txt',u[-1,:-(n-2)],delimiter=',',newline='\n')
+        elif (rank == num_ranks - 1):
+            savetxt('p'+str(rank)+'ufinal_N='+str(n-2)+'_N_t='+str(nt)+'.txt',u[-1,(n-2):],delimiter=',',newline='\n')
+        else:
+            savetxt('p'+str(rank)+'ufinal_N='+str(n-2)+'_N_t='+str(nt)+'.txt',u[-1,(n-2):-(n-2)],delimiter=',',newline='\n')
     # Compute L2-norm of the error at final time
     e = (u[-1,:] - ue[-1,:]).reshape(-1,)
     if (rank == 0):
