@@ -1,3 +1,0 @@
-My first commit of text.txt
-I am Aaron Segura
-I am learning version control
